@@ -1,0 +1,25 @@
+.ui.cards.auth-method--group {
+  margin-top: 2em;
+}
+
+.ui.card.auth-method__panel {
+  margin: 2em;
+  padding: 0.5em;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ui.card.auth-method--discord {
+  box-shadow: 0px 2px 4px 1px rgba(114, 137, 218, 0.5), 0px 2px 2px 1px rgba(0, 0, 0, 0.2);
+}
+
+.ui.card.auth-method--forums {
+  box-shadow: 0px 2px 4px 1px rgba(177, 158, 113, 0.5), 0px 2px 2px 1px rgba(0, 0, 0, 0.2);
+}
+
+.ui.card.auth-method--teamspeak {
+  box-shadow: 0px 2px 4px 1px rgba(17, 221, 133, 0.5), 0px 2px 2px 1px rgba(0, 0, 0, 0.2);
+}
+
+.ui.card .ui.label > .icon {
+  margin: 0;
+}

@@ -1,5 +1,7 @@
 import * as React from 'react'
 import Head from 'next/head'
+import { Container } from 'semantic-ui-react'
+import 'semantic-ui-css/semantic.min.css'
 
 interface IPageProps {
   title?: string
@@ -13,7 +15,7 @@ class Page extends React.PureComponent<IPageProps> {
         <Head>
           <title>{this.props.title || 'United Operations'}</title>
         </Head>
-        {this.props.children}
+        <Container>{this.props.children}</Container>
       </div>
     )
   }
