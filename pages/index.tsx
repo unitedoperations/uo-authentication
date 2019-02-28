@@ -4,11 +4,15 @@ import AuthenticationPanelList from '../components/AuthenticationPanelList'
 import 'semantic-ui-css/semantic.min.css'
 import '../static/styles.css'
 
-class Home extends React.Component {
+export interface IndexPageProps {
+  socket: any
+}
+
+class Home extends React.Component<IndexPageProps> {
   render() {
     return (
       <Page title="UO Member Authentication">
-        <AuthenticationPanelList />
+        <AuthenticationPanelList socket={this.props.socket} />
       </Page>
     )
   }
