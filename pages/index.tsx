@@ -5,14 +5,14 @@ import 'semantic-ui-css/semantic.min.css'
 import '../static/styles.css'
 
 export interface IndexPageProps {
-  socket: any
+  socket: SocketIO.Socket
 }
 
 class Home extends React.Component<IndexPageProps> {
   render() {
     return (
       <Page title="UO Member Authentication">
-        <AuthenticationPanelList socket={this.props.socket} />
+        <AuthenticationPanelList enabled={true} socket={this.props.socket} />
       </Page>
     )
   }

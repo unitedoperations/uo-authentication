@@ -20,9 +20,7 @@ class UOAuthenticationApp extends App<any, UOAuthenticationAppState> {
   }
 
   componentDidMount() {
-    const socket = io({
-      path: '/io'
-    })
+    const socket = io('http://localhost:8080')
     this.setState({ socket })
   }
 

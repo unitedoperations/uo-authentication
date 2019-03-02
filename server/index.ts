@@ -29,24 +29,18 @@ passport.deserializeUser((user: unknown, done: any) => {
 
 const server: http.Server = new http.Server(expressApp)
 const io: socketIO.Server = socketIO(server, {
-  path: '/io',
   serveClient: false
 })
 
 export type AuthenticationProvider = 'discord' | 'forums' | 'teamspeak'
-export type AuthenticationAttempt = {
+export interface AuthenticationAttempt {
   success: boolean
   provider: AuthenticationProvider
-  payload?: any
-  next?: AuthenticationProvider
+  next: AuthenticationProvider | null
 }
 
-io.on('connection', socket => {
+io.on('connection', _socket => {
   console.log('New socket connection!')
-  socket.on('auth_attempt', (data: AuthenticationAttempt) => {
-    console.log('AUTH_ATTEMPT event emitted!')
-    socket.broadcast.emit('auth_attempt', data)
-  })
 })
 
 const nextApp: next.Server = next({ dev: process.env.NODE_ENV !== 'production' })
@@ -68,8 +62,10 @@ nextApp
 
     expressApp.get('/auth/complete', (req: express.Request, res: express.Response) => {
       const { ref, status } = req.query
-      io.sockets.emit('auth_attempt', { success: status === 'success', provider: ref })
-      res.send('You can now close this tab.')
+      const next = ref === 'discord' ? 'forums' : ref === 'forums' ? 'teamspeak' : null
+
+      io.sockets.emit('auth_attempt', { success: status === 'success', provider: ref, next })
+      handler(req, res)
     })
 
     expressApp.get('*', (req: express.Request, res: express.Response) => {

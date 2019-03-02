@@ -4,7 +4,8 @@ import AuthenticationPanel from './AuthenticationPanel'
 import { AuthenticationProvider, AuthenticationAttempt } from '../server'
 
 export interface AuthenticationPanelListProps {
-  socket: any
+  socket: SocketIO.Socket
+  enabled: boolean
 }
 
 export type AuthMethod = {
@@ -15,6 +16,7 @@ export type AuthMethod = {
 }
 
 export interface AuthenticationPanelListState {
+  shouldSubscribe: boolean
   subscribed: boolean
   methods: Record<AuthenticationProvider, AuthMethod>
 }
@@ -24,12 +26,13 @@ class AuthenticationPanelList extends React.Component<
   AuthenticationPanelListState
 > {
   state = {
+    shouldSubscribe: false,
     subscribed: false,
     methods: {
       discord: {
         name: 'Discord',
         image: 'Discord-Logo-Color.png',
-        enabled: false,
+        enabled: true,
         status: 'unstarted'
       },
       forums: {
@@ -47,22 +50,64 @@ class AuthenticationPanelList extends React.Component<
     }
   }
 
+  static getDerivedStateFromProps(
+    props: AuthenticationPanelListProps,
+    state: AuthenticationPanelListState
+  ) {
+    if (props.socket && !state.shouldSubscribe) return { shouldSubscribe: true }
+    return null
+  }
+
   subscribe = () => {
-    if (!this.state.subscribed) {
+    if (this.state.shouldSubscribe && !this.state.subscribed) {
       this.props.socket.on('auth_attempt', this.handleAuthAttempt)
       this.setState({ subscribed: true })
     }
   }
 
   handleAuthAttempt = (data: AuthenticationAttempt) => {
+    const { provider, next } = data
     if (!data.success) {
       this.setState(prev => ({
         methods: {
           ...prev.methods,
-          [data.provider]: { status: 'unstarted', ...prev.methods[data.provider] }
+          [provider]: { ...prev.methods[provider], status: 'failed' }
         }
       }))
+    } else {
+      this.setState(
+        prev => ({
+          methods: {
+            ...prev.methods,
+            [provider]: { ...prev.methods[provider], status: 'success' }
+          }
+        }),
+        () => {
+          if (next)
+            this.setState(prev => ({
+              methods: {
+                ...prev.methods,
+                [next]: {
+                  ...prev.methods[next],
+                  enabled: true
+                }
+              }
+            }))
+        }
+      )
     }
+  }
+
+  componentDidMount() {
+    this.subscribe()
+  }
+
+  componentDidUpdate() {
+    this.subscribe()
+  }
+
+  componentWillUnmount() {
+    this.props.socket.off('auth_attempt', this.handleAuthAttempt)
   }
 
   render() {
@@ -71,7 +116,7 @@ class AuthenticationPanelList extends React.Component<
         {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
           <AuthenticationPanel
             key={i}
-            enabled={true}
+            enabled={m.enabled && this.props.enabled && m.status !== 'success'}
             status={m.status}
             name={m.name}
             image={m.image}

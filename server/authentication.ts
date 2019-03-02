@@ -83,7 +83,7 @@ const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
   clientSecret: process.env.DISCORD_CLIENT_SECRET as string,
   authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
   tokenURL: 'https://discordapp.com/api/oauth2/token',
-  callbackURL: 'https://uo-auth-dev.localtunnel.me/auth/discord/callback',
+  callbackURL: 'http://localhost:8080/auth/discord/callback',
   scope: ['identify', 'email']
 }
 

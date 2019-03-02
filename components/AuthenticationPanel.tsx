@@ -15,6 +15,25 @@ export interface AuthenticationPanelState {
   clicked: boolean
 }
 
+const labelMapping = {
+  unstarted: {
+    color: 'red',
+    icon: 'x'
+  },
+  failed: {
+    color: 'red',
+    icon: 'x'
+  },
+  pending: {
+    color: 'yellow',
+    icon: 'clock'
+  },
+  success: {
+    color: 'green',
+    icon: 'check'
+  }
+}
+
 class AuthenticationPanel extends React.Component<
   AuthenticationPanelProps,
   AuthenticationPanelState
@@ -29,10 +48,10 @@ class AuthenticationPanel extends React.Component<
     props: AuthenticationPanelProps,
     _state: AuthenticationPanelState
   ) {
+    if (props.status === 'unstarted') return null
     return {
-      labelColor:
-        props.status === 'unstarted' ? 'red' : props.status === 'pending' ? 'yellow' : 'green',
-      labelIcon: props.status === 'unstarted' ? 'x' : props.status === 'pending' ? 'clock' : 'check'
+      labelColor: labelMapping[props.status].color,
+      labelIcon: labelMapping[props.status].icon
     }
   }
 
@@ -61,21 +80,28 @@ class AuthenticationPanel extends React.Component<
             </div>
           </Card.Header>
           <Card.Content textAlign="center">
-            <Link href={`/auth/${this.props.name.toLowerCase()}`}>
-              <a target="_blank">
-                <Button
-                  onClick={this.handleButtonClick}
-                  disabled={false}
-                  labelPosition="left"
-                  color="green"
-                  icon
-                  fluid
-                >
-                  <Icon name={this.props.enabled ? 'lock open' : 'lock'} />
-                  Authenticate
-                </Button>
-              </a>
-            </Link>
+            {this.props.enabled && (
+              <Link href={`/auth/${this.props.name.toLowerCase()}`}>
+                <a target="_blank">
+                  <Button
+                    onClick={this.handleButtonClick}
+                    labelPosition="left"
+                    color="green"
+                    icon
+                    fluid
+                  >
+                    <Icon name="lock open" />
+                    Authenticate
+                  </Button>
+                </a>
+              </Link>
+            )}
+            {!this.props.enabled && (
+              <Button disabled={true} labelPosition="left" icon fluid>
+                <Icon name="lock" />
+                Authenticate
+              </Button>
+            )}
           </Card.Content>
         </Card.Content>
       </Card>
