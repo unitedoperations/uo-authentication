@@ -7,6 +7,7 @@ export interface AuthenticationPanelProps {
   image: string
   enabled: boolean
   status: string
+  authPayload: any
 }
 
 export interface AuthenticationPanelState {

@@ -61,8 +61,13 @@ class AuthenticationPanelList extends React.Component<
   subscribe = () => {
     if (this.state.shouldSubscribe && !this.state.subscribed) {
       this.props.socket.on('auth_attempt', this.handleAuthAttempt)
+      this.props.socket.on('auth_error', this.handleAuthError)
       this.setState({ subscribed: true })
     }
+  }
+
+  handleAuthError = (data: unknown) => {
+    alert(JSON.stringify(data))
   }
 
   handleAuthAttempt = (data: AuthenticationAttempt) => {
@@ -112,7 +117,7 @@ class AuthenticationPanelList extends React.Component<
 
   render() {
     return (
-      <Card.Group className="auth-method--group">
+      <Card.Group className="auth-method--group" itemsPerRow={3} doubling>
         {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
           <AuthenticationPanel
             key={i}
@@ -120,6 +125,7 @@ class AuthenticationPanelList extends React.Component<
             status={m.status}
             name={m.name}
             image={m.image}
+            authPayload={{}}
           />
         ))}
       </Card.Group>

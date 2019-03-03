@@ -56,11 +56,6 @@ export type ForumsUser = {
   customFields: Fields
 }
 
-export type SerializedUser = {
-  discord: DiscordUser
-  forums: ForumsUser
-}
-
 /**
  * Creates the HTTP request options object for fetch calls
  * @param {Partial<RequestInit>} [others = {}]
@@ -84,28 +79,53 @@ const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
   authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
   tokenURL: 'https://discordapp.com/api/oauth2/token',
   callbackURL: 'http://localhost:8080/auth/discord/callback',
-  scope: ['identify', 'email']
+  scope: ['identify']
 }
 
 /**
- * Retrieve the logged in user for Discord after successful OAuth2
- * authentication using the access token bearer to detect user
- * @param {string} token
- * @returns {Promise<DiscordUser>}
+ * Check whether there is a user registered on the forums with
+ * the same username as found in the Discord OAuth user process
+ * @export
+ * @param {string} username
+ * @returns {Promise<boolean>}
  */
-async function getDiscordUser(token: string): Promise<DiscordUser> {
+export async function hasForumsUser(username: string): Promise<boolean> {
   const res = await fetch(
-    'https://discordapp.com/api/users/@me',
-    requestOptions({ headers: { Authorization: `Bearer ${token}` } })
+    `${process.env.FORUMS_API_BASE}/core/members&name=${encodeURIComponent(username)}`,
+    requestOptions()
   )
-  return res.json() as Promise<DiscordUser>
+  const users: ForumsUser[] = await res.json().then(res => res.results)
+  return users.some(u => u.name === username)
 }
 
 /**
- * Strategy verification function that compiles the Discord
- * and derived forums user objects based on the found email address
- * into the serializable user object for passport to pass into the
- * request object in other API calls
+ * Check the logged in TeamSpeak users on the server to see if
+ * there is a user matching the argued username on the server
+ * @export
+ * @param {string} username
+ * @returns {Promise<boolean>}
+ */
+export async function hasTeamspeakUser(_username: string): Promise<boolean> {
+  // const ts = new TeamSpeakClient('ts3.unitedoperations.net:9987')
+  // return ts.send(
+  //   'login',
+  //   { client_login_name: 'UOAuthenticator', client_login_password: 'grits' },
+  //   (err: Error, _res: any, _raw: any) => {
+  //     if (err) throw err
+  //     ts.send('clientlist', (err: Error, res: any, _raw: any) => {
+  //       if (err) throw err
+  //       console.log(res)
+  //       return true
+  //     })
+  //   }
+  // )
+  return true
+}
+
+/**
+ * Strategy verification function that fetches the currently
+ * authenticated Discord user's information for subsequent
+ * called to other authentication providers
  * @param {string} accessToken
  * @param {string} _refreshToken
  * @param {unknown} _profile
@@ -118,19 +138,13 @@ async function verifyDiscord(
   done: Function
 ) {
   try {
-    const discordUser = await getDiscordUser(accessToken)
     const res = await fetch(
-      `${process.env.FORUMS_API_BASE}/core/members&email=${encodeURIComponent(discordUser.email)}`,
-      requestOptions()
+      'https://discordapp.com/api/users/@me',
+      requestOptions({ headers: { Authorization: `Bearer ${accessToken}` } })
     )
-    const resJson = await res.json()
+    const discordUser: DiscordUser = await res.json()
 
-    const serializableUser: SerializedUser = {
-      discord: discordUser,
-      forums: resJson.results[0]
-    }
-
-    done(null, serializableUser)
+    done(null, discordUser)
   } catch (e) {
     done(e, null)
   }

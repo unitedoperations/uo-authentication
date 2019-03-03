@@ -1,23 +1,11 @@
 require('dotenv').config()
+import { Request, Response } from 'express'
 import * as http from 'http'
 import * as next from 'next'
 import * as socketIO from 'socket.io'
-import * as express from 'express'
-import * as helmet from 'helmet'
-import * as compression from 'compression'
-import * as morgan from 'morgan'
 import * as passport from 'passport'
-import { DiscordAuth } from './authentication'
-
-const expressApp: express.Express = express()
-expressApp.set('port', process.env.PORT || 8080)
-expressApp.use(morgan('dev'))
-expressApp.use(helmet())
-expressApp.use(compression())
-expressApp.use(express.json())
-expressApp.use(express.urlencoded({ extended: false }))
-expressApp.use(passport.initialize())
-expressApp.use(passport.session())
+import { DiscordAuth, hasForumsUser, hasTeamspeakUser } from './authentication'
+import expressApp from './expressApp'
 
 passport.use(DiscordAuth)
 passport.serializeUser((user: unknown, done: any) => {
@@ -50,25 +38,54 @@ nextApp
   .then(() => {
     expressApp.get('/auth/discord', passport.authenticate('oauth2'))
 
+    expressApp.get('/auth/forums', async (req: Request, res: Response) => {
+      try {
+        const { username } = req.session.passport.user
+        const found: boolean = await hasForumsUser(username)
+        res.redirect(`/auth/complete?ref=forums&status=${found ? 'success' : 'failed'}`)
+      } catch (err) {
+        io.sockets.emit('auth_error', err.message)
+        res.redirect('/auth/complete?ref=forums&status=error')
+      }
+    })
+
+    expressApp.get('/auth/teamspeak', async (req: Request, res: Response) => {
+      try {
+        const { username } = req.session.passport.user
+        const found: boolean = await hasTeamspeakUser(username)
+        res.redirect(`/auth/complete?ref=teamspeak&status=${found ? 'success' : 'failed'}`)
+      } catch (err) {
+        console.log(err)
+        io.sockets.emit('auth_error', err.message)
+        res.redirect('/auth/complete?ref=teamspeak&status=error')
+      }
+    })
+
     expressApp.get(
       '/auth/discord/callback',
       passport.authenticate('oauth2', {
         failureRedirect: '/auth/complete?ref=discord&status=fail'
       }),
-      (_req: express.Request, res: express.Response) => {
+      (_req: Request, res: Response) => {
         res.redirect('/auth/complete?ref=discord&status=success')
       }
     )
 
-    expressApp.get('/auth/complete', (req: express.Request, res: express.Response) => {
+    expressApp.get('/auth/complete', (req: Request, res: Response) => {
       const { ref, status } = req.query
       const next = ref === 'discord' ? 'forums' : ref === 'forums' ? 'teamspeak' : null
 
-      io.sockets.emit('auth_attempt', { success: status === 'success', provider: ref, next })
+      const socketData: AuthenticationAttempt = {
+        success: status === 'success',
+        provider: ref,
+        next
+      }
+
+      io.sockets.emit('auth_attempt', socketData)
       handler(req, res)
     })
 
-    expressApp.get('*', (req: express.Request, res: express.Response) => {
+    expressApp.get('*', (req: Request, res: Response) => {
       handler(req, res)
     })
 
