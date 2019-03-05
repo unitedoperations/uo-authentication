@@ -67,13 +67,15 @@ class Charter extends React.Component<{}, CharterState> {
             </Message.List>
           </Message.Content>
         </Message>
-        <Checkbox
-          onClick={this.handleAgreementClick}
-          checked={this.state.accepted}
-          disabled={!this.state.canAccept}
-          label="I have read and agree"
-          toggle
-        />
+        <div className="auth-charter--toggle">
+          <Checkbox
+            onClick={this.handleAgreementClick}
+            checked={this.state.accepted}
+            disabled={!this.state.canAccept}
+            toggle
+          />
+          <span>I have read and agree</span>
+        </div>
       </Container>
     )
   }

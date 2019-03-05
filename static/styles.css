@@ -1,8 +1,43 @@
+html,
+body {
+  background: #0d0d0d;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5 {
+  color: #b19e71 !important;
+}
+
+i:not(.check, .x) {
+  color: #b19e71;
+}
+
+i.users.icon.circular {
+  box-shadow: 0 0 0 0.1em rgba(177, 158, 113, 0.5) inset;
+}
+
+div.content {
+  color: #878787;
+}
+
+.ui.header > div.content {
+  color: #b19e71;
+}
+
+div.content > .header {
+  color: #b19e71;
+}
+
 .ui.cards.auth-method--group {
   margin-top: 2em;
 }
 
 .ui.card.auth-method__panel {
+  background: #272727;
   margin: 2em;
   padding: 0.5em;
   border: 1px solid rgba(0, 0, 0, 0.05);
@@ -12,14 +47,50 @@
   box-shadow: 0px 2px 4px 1px rgba(114, 137, 218, 0.5), 0px 2px 2px 1px rgba(0, 0, 0, 0.2);
 }
 
+.ui.card.auth-method--discord span {
+  color: rgb(114, 137, 218);
+}
+
 .ui.card.auth-method--forums {
   box-shadow: 0px 2px 4px 1px rgba(177, 158, 113, 0.5), 0px 2px 2px 1px rgba(0, 0, 0, 0.2);
+}
+
+.ui.card.auth-method--forums span {
+  color: rgb(177, 158, 113);
 }
 
 .ui.card.auth-method--teamspeak {
   box-shadow: 0px 2px 4px 1px rgba(17, 221, 133, 0.5), 0px 2px 2px 1px rgba(0, 0, 0, 0.2);
 }
 
+.ui.card.auth-method--teamspeak span {
+  color: rgb(17, 221, 133);
+}
+
 .ui.card .ui.label > .icon {
   margin: 0;
+}
+
+.ui.message {
+  background: #272727;
+  box-shadow: 0 0 0 1px rgba(200, 200, 200, 0.22) inset, 0 0 0 0 transparent;
+}
+
+.ui.message > i {
+  color: #b19e71;
+}
+
+.ui.toggle.checkbox input:disabled {
+  color: #878787 !important;
+}
+
+.auth-charter--toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  color: #b19e71 !important;
+}
+
+.auth-charter--toggle > span {
+  margin-left: 1em;
 }
