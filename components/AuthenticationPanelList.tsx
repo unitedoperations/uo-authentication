@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Card } from 'semantic-ui-react'
+import { Card, Container } from 'semantic-ui-react'
 import AuthenticationPanel from './AuthenticationPanel'
 import { AuthenticationProvider, AuthenticationAttempt } from '../server'
 
@@ -117,18 +117,19 @@ class AuthenticationPanelList extends React.Component<
 
   render() {
     return (
-      <Card.Group className="auth-method--group" itemsPerRow={3} doubling>
-        {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
-          <AuthenticationPanel
-            key={i}
-            enabled={m.enabled && this.props.enabled && m.status !== 'success'}
-            status={m.status}
-            name={m.name}
-            image={m.image}
-            authPayload={{}}
-          />
-        ))}
-      </Card.Group>
+      <Container>
+        <Card.Group className="auth-method--group" itemsPerRow={3} doubling>
+          {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
+            <AuthenticationPanel
+              key={i}
+              enabled={m.enabled && this.props.enabled && m.status !== 'success'}
+              status={m.status}
+              name={m.name}
+              image={m.image}
+            />
+          ))}
+        </Card.Group>
+      </Container>
     )
   }
 }
