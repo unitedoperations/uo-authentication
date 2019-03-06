@@ -87,15 +87,17 @@ const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
  * the same username as found in the Discord OAuth user process
  * @export
  * @param {string} username
- * @returns {Promise<boolean>}
+ * @returns {Promise<[number, string] | null>}
  */
-export async function hasForumsUser(username: string): Promise<boolean> {
+export async function getForumsUser(username: string): Promise<[number, string] | null> {
   const res = await fetch(
     `${process.env.FORUMS_API_BASE}/core/members&name=${encodeURIComponent(username)}`,
     requestOptions()
   )
   const users: ForumsUser[] = await res.json().then(res => res.results)
-  return users.some(u => u.name === username)
+
+  if (users.length === 0) return null
+  return [users[0].id, users[0].email]
 }
 
 /**
@@ -105,7 +107,7 @@ export async function hasForumsUser(username: string): Promise<boolean> {
  * @param {string} username
  * @returns {Promise<boolean>}
  */
-export async function hasTeamspeakUser(_username: string): Promise<boolean> {
+export async function getTeamspeakUser(_username: string): Promise<boolean> {
   // const ts = new TeamSpeakClient('ts3.unitedoperations.net:9987')
   // return ts.send(
   //   'login',

@@ -2,10 +2,15 @@ require('dotenv').config()
 import { Request, Response } from 'express'
 import * as http from 'http'
 import * as next from 'next'
+import * as cors from 'cors'
 import * as socketIO from 'socket.io'
 import * as passport from 'passport'
-import { DiscordAuth, hasForumsUser, hasTeamspeakUser } from './authentication'
+import * as shortid from 'shortid'
+import { DiscordAuth, getForumsUser, getTeamspeakUser } from './authentication'
 import expressApp from './expressApp'
+import storeClient, { UserStoreEntity } from './store'
+import mailClient from './mail'
+import { validateAPIKey } from './middleware'
 
 passport.use(DiscordAuth)
 passport.serializeUser((user: unknown, done: any) => {
@@ -41,8 +46,14 @@ nextApp
     expressApp.get('/auth/forums', async (req: Request, res: Response) => {
       try {
         const { username } = req.session.passport.user
-        const found: boolean = await hasForumsUser(username)
-        res.redirect(`/auth/complete?ref=forums&status=${found ? 'success' : 'failed'}`)
+        const items: [number, string] | null = await getForumsUser(username)
+
+        if (items) {
+          req.session.passport.user.forumsId = items[0]
+          req.session.passport.user.forumsEmail = items[1]
+        }
+
+        res.redirect(`/auth/complete?ref=forums&status=${items !== null ? 'success' : 'failed'}`)
       } catch (err) {
         io.sockets.emit('auth_error', err.message)
         res.redirect('/auth/complete?ref=forums&status=error')
@@ -52,7 +63,7 @@ nextApp
     expressApp.get('/auth/teamspeak', async (req: Request, res: Response) => {
       try {
         const { username } = req.session.passport.user
-        const found: boolean = await hasTeamspeakUser(username)
+        const found: boolean = await getTeamspeakUser(username)
         res.redirect(`/auth/complete?ref=teamspeak&status=${found ? 'success' : 'failed'}`)
       } catch (err) {
         console.log(err)
@@ -72,6 +83,7 @@ nextApp
     )
 
     expressApp.get('/auth/complete', (req: Request, res: Response) => {
+      console.log(req.session)
       const { ref, status } = req.query
       const next = ref === 'discord' ? 'forums' : ref === 'forums' ? 'teamspeak' : null
 
@@ -83,6 +95,20 @@ nextApp
 
       io.sockets.emit('auth_attempt', socketData)
       handler(req, res)
+    })
+
+    expressApp.post('/auth/token', cors(), validateAPIKey, async (req: Request, res: Response) => {
+      try {
+        const { username } = req.body
+        const token = shortid.generate()
+
+        const user: UserStoreEntity = await storeClient.find(username)
+
+        mailClient.send(token, user.email)
+        res.status(200).json({ ttl: 300, token })
+      } catch (err) {
+        res.status(404).json({ error: err.message })
+      }
     })
 
     expressApp.get('*', (req: Request, res: Response) => {
