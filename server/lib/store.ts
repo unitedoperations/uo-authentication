@@ -14,7 +14,7 @@ class StoreClient {
   constructor() {
     this._store = new Datastore({
       projectId: process.env.GOOGLE_PROJECT_ID,
-      credentials: require('./config/gcp-key.json')
+      credentials: require('../config/gcp-key.json')
     })
   }
 
@@ -43,7 +43,7 @@ class StoreClient {
     try {
       await this._store.save(entity)
     } catch (err) {
-      throw new Error('Error while saving initial user entity to GCP Datastore')
+      throw new Error(`Error while saving initial user entity to GCP Datastore for ${username}`)
     }
   }
 

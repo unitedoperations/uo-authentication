@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import { Request, Response, NextFunction } from 'express'
 import { resolve } from 'path'
 
-const apiKeys: string[] = readFileSync(resolve(__dirname, './config/api-keys.txt'), 'utf8').split(
+const apiKeys: string[] = readFileSync(resolve(__dirname, '../config/api-keys.txt'), 'utf8').split(
   '\n'
 )
 
