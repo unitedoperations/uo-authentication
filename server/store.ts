@@ -14,7 +14,6 @@ class StoreClient {
   constructor() {
     this._store = new Datastore({
       projectId: process.env.GOOGLE_PROJECT_ID,
-      namespace: 'authenticated_users',
       credentials: require('./config/gcp-key.json')
     })
   }
@@ -49,15 +48,11 @@ class StoreClient {
   }
 
   async find(username: string): Promise<UserStoreEntity> {
-    try {
-      const query: Query = this._store.createQuery('User').filter('username', '=', username)
-      const [users] = await this._store.runQuery(query)
+    const query: Query = this._store.createQuery('User').filter('username', '=', username)
+    const [users] = await this._store.runQuery(query)
 
-      if (users.length >= 1) return users[0]
-      else throw new Error(`No authenticated users found for ${username}`)
-    } catch (err) {
-      throw new Error('Error while running the query in Datastore')
-    }
+    if (users.length >= 1) return users[0]
+    else throw new Error(`No authenticated users found for ${username}`)
   }
 }
 
