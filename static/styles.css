@@ -71,7 +71,8 @@ div.content > .header {
   margin: 0;
 }
 
-.ui.message {
+.ui.icon.message {
+  margin-top: 3em;
   background: #272727;
   box-shadow: 0 0 0 1px rgba(200, 200, 200, 0.22) inset, 0 0 0 0 transparent;
 }

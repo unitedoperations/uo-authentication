@@ -164,6 +164,7 @@ export async function verifyForums(req: Request, res: Response, _next: NextFunct
  * @param {Response} res
  * @param {NextFunction} _next
  */
+// TODO:
 export async function verifyTeamspeak(req: Request, res: Response, _next: NextFunction) {
   try {
     const { username } = req.session.passport.user
@@ -214,7 +215,6 @@ export async function verifyDiscord(
  * @param {NextFunction} _next
  */
 export async function completeAuthProvider(req: Request, res: Response, _next: NextFunction) {
-  console.log(req.session)
   const { ref, status } = req.query
   const next = ref === 'discord' ? 'forums' : ref === 'forums' ? 'teamspeak' : null
 
@@ -225,6 +225,11 @@ export async function completeAuthProvider(req: Request, res: Response, _next: N
   }
 
   io.sockets.emit('auth_attempt', socketData)
+
+  if (status === 'success' && ref === 'teamspeak') {
+    io.sockets.emit('auth_complete', req.session.passport.user.username)
+  }
+
   nextHandler(req, res)
 }
 
@@ -252,6 +257,20 @@ export async function issueToken(req: Request, res: Response, _next: NextFunctio
   } catch (err) {
     res.status(404).json({ error: err.message })
   }
+}
+
+/**
+ * Handles the router called specifically for saving the authentcation user
+ * session and passport data in the Google Cloud datastore instance
+ * @export
+ * @param {Request} req
+ * @param {Response} res
+ * @param {NextFunction} _next
+ */
+// TODO:
+export async function saveAuthenticatedUser(req: Request, res: Response, _next: NextFunction) {
+  try {
+  } catch (err) {}
 }
 
 /**

@@ -47,6 +47,7 @@ class Charter extends React.Component<{}, CharterState> {
             enable to rest of the authentication process.
             <Message.List>
               <Message.Item>
+                {this.state.charterClicked && <Icon name="check" color="green" />}
                 <a
                   onClick={_e => this.handleLinkClicked('charter')}
                   href="https://wiki.unitedoperations.net/wiki/United_Operations_Charter"
@@ -56,6 +57,7 @@ class Charter extends React.Component<{}, CharterState> {
                 </a>
               </Message.Item>
               <Message.Item>
+                {this.state.sopsClicked && <Icon name="check" color="green" />}
                 <a
                   onClick={_e => this.handleLinkClicked('sops')}
                   href="https://wiki.unitedoperations.net/wiki/Category:Standard_Operating_Procedures"
@@ -74,7 +76,7 @@ class Charter extends React.Component<{}, CharterState> {
             disabled={!this.state.canAccept}
             toggle
           />
-          <span>I have read and agree</span>
+          <span>I have read and agree to the charter and SOPs, and wish to continue.</span>
         </div>
       </Container>
     )

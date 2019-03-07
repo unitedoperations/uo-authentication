@@ -1,7 +1,8 @@
 import * as React from 'react'
-import { Card, Container } from 'semantic-ui-react'
+import { Card } from 'semantic-ui-react'
 import AuthenticationPanel from './AuthenticationPanel'
-import { AuthenticationProvider, AuthenticationAttempt } from '../server'
+import { AuthenticationProvider, AuthenticationAttempt } from '../server/server'
+import { emitter } from '../pages/index'
 
 export interface AuthenticationPanelListProps {
   socket: SocketIO.Socket
@@ -62,12 +63,9 @@ class AuthenticationPanelList extends React.Component<
     if (this.state.shouldSubscribe && !this.state.subscribed) {
       this.props.socket.on('auth_attempt', this.handleAuthAttempt)
       this.props.socket.on('auth_error', this.handleAuthError)
+      this.props.socket.on('auth_complete', this.handleAuthComplete)
       this.setState({ subscribed: true })
     }
-  }
-
-  handleAuthError = (data: unknown) => {
-    alert(JSON.stringify(data))
   }
 
   handleAuthAttempt = (data: AuthenticationAttempt) => {
@@ -103,6 +101,14 @@ class AuthenticationPanelList extends React.Component<
     }
   }
 
+  handleAuthError = (data: unknown) => {
+    alert(JSON.stringify(data))
+  }
+
+  handleAuthComplete = (username: string) => {
+    emitter.emit('done', username)
+  }
+
   componentDidMount() {
     this.subscribe()
   }
@@ -117,19 +123,17 @@ class AuthenticationPanelList extends React.Component<
 
   render() {
     return (
-      <Container>
-        <Card.Group className="auth-method--group" itemsPerRow={3} doubling>
-          {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
-            <AuthenticationPanel
-              key={i}
-              enabled={m.enabled && this.props.enabled && m.status !== 'success'}
-              status={m.status}
-              name={m.name}
-              image={m.image}
-            />
-          ))}
-        </Card.Group>
-      </Container>
+      <Card.Group className="auth-method--group" itemsPerRow={3}>
+        {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
+          <AuthenticationPanel
+            key={i}
+            enabled={m.enabled && m.status !== 'success'}
+            status={m.status}
+            name={m.name}
+            image={m.image}
+          />
+        ))}
+      </Card.Group>
     )
   }
 }
