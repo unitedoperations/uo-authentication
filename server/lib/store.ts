@@ -8,6 +8,12 @@ export type UserStoreEntity = {
   teamspeak_id: string
 }
 
+export type EntityData = {
+  name: string
+  value: any
+  excludeFromIndexes: boolean
+}
+
 class StoreClient {
   private _store: Datastore
 
@@ -18,32 +24,20 @@ class StoreClient {
     })
   }
 
-  async add(username: string, email: string, forumsId: number) {
-    const userKey = this._store.key('User')
-    const entity = {
-      key: userKey,
-      data: [
-        {
-          name: 'username',
-          value: username
-        },
-        {
-          name: 'email',
-          value: email,
-          excludeFromIndexes: true
-        },
-        {
-          name: 'forums_id',
-          value: forumsId,
-          excludeFromIndexes: true
-        }
-      ]
-    }
+  async add(user: UserStoreEntity) {
+    const key = this._store.key('User')
+    const data: EntityData[] = Object.entries(user).map(([k, v]) => ({
+      name: k,
+      value: v,
+      excludeFromIndexes: k !== 'username' && k !== 'email'
+    }))
 
     try {
-      await this._store.save(entity)
+      await this._store.save({ key, data })
     } catch (err) {
-      throw new Error(`Error while saving initial user entity to GCP Datastore for ${username}`)
+      throw new Error(
+        `Error while saving initial user entity to GCP Datastore for ${user.username}`
+      )
     }
   }
 
