@@ -1,5 +1,11 @@
 import * as nodemailer from 'nodemailer'
 
+/**
+ * Node Mailer client for send emails to users
+ * @export
+ * @class MailClient
+ * @private @property {nodemailer.Transporter} _client
+ */
 class MailClient {
   private _client: nodemailer.Transporter
 
@@ -15,6 +21,14 @@ class MailClient {
     })
   }
 
+  /**
+   * Send an email to the target user with their authentication token
+   * as part of the process when verifying user identities using the
+   * /auth/token endpoint of the API
+   * @param {string} token
+   * @param {string} email
+   * @memberof MailClient
+   */
   async send(token: string, email: string) {
     const opts = {
       from: '"United Operations" <uo.authenticator@gmail.com>',

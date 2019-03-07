@@ -51,15 +51,15 @@ expressApp.get(
     failureRedirect: '/auth/complete?ref=discord&status=fail'
   }),
   (_req: express.Request, res: express.Response) => {
-    res.redirect('/auth/auth/complete?ref=discord&status=success')
+    res.redirect('/auth/complete?ref=discord&status=success')
   }
 )
 
 expressApp.get('/auth/forums', handlers.verifyForums)
 expressApp.get('/auth/teamspeak', handlers.verifyTeamspeak)
 expressApp.get('/auth/complete', handlers.completeAuthProvider)
-expressApp.post('/auth/save', handlers.saveAuthenticatedUser)
-expressApp.get('/auth/token', cors(), validateAPIKey, handlers.issueToken)
+expressApp.post('/auth/save', handlers.addAuthenticatedUser)
+expressApp.post('/auth/token', cors(), validateAPIKey, handlers.issueToken)
 expressApp.get('*', (req, res) => {
   nextHandler(req, res)
 })
@@ -69,6 +69,6 @@ export const io: socketIO.Server = socketIO(server, {
   serveClient: false
 })
 
-io.sockets.on('connection', _socket => {
-  console.log('New socket connection!')
+io.sockets.on('connection', socket => {
+  console.log(`Socket: ${socket.id}`)
 })

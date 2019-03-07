@@ -76,19 +76,6 @@ const requestOptions = (other: Partial<RequestInit> = {}): RequestInit => ({
 })
 
 /**
- * Configuration options for the OAuth2 passport provider
- * @type {OAuth2Strategy.StrategyOptions}
- */
-const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
-  clientID: process.env.DISCORD_CLIENT_ID as string,
-  clientSecret: process.env.DISCORD_CLIENT_SECRET as string,
-  authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
-  tokenURL: 'https://discordapp.com/api/oauth2/token',
-  callbackURL: 'http://localhost:8080/auth/discord/callback',
-  scope: ['identify']
-}
-
-/**
  * Check whether there is a user registered on the forums with
  * the same username as found in the Discord OAuth user process
  * @param {string} username
@@ -169,6 +156,7 @@ export async function verifyTeamspeak(req: Request, res: Response, _next: NextFu
   try {
     const { username } = req.session.passport.user
     const found: boolean = await getTeamspeakUser(username)
+    req.session.passport.user.teamspeakId = 'kh42fno4eijp2jc2o'
     res.redirect(`/auth/complete?ref=teamspeak&status=${found ? 'success' : 'failed'}`)
   } catch (err) {
     io.sockets.emit('auth_error', err.message)
@@ -223,7 +211,6 @@ export async function completeAuthProvider(req: Request, res: Response, _next: N
     provider: ref,
     next
   }
-
   io.sockets.emit('auth_attempt', socketData)
 
   if (status === 'success' && ref === 'teamspeak') {
@@ -250,9 +237,9 @@ export async function issueToken(req: Request, res: Response, _next: NextFunctio
     const { username } = req.body
     const token = shortid.generate()
 
-    const user: UserStoreEntity = await storeClient.find(username)
+    const user = await storeClient.find(username)
+    await mailClient.send(token, user.email)
 
-    mailClient.send(token, user.email)
     res.status(200).json({ ttl: 300, token })
   } catch (err) {
     res.status(404).json({ error: err.message })
@@ -268,9 +255,36 @@ export async function issueToken(req: Request, res: Response, _next: NextFunctio
  * @param {NextFunction} _next
  */
 // TODO:
-export async function saveAuthenticatedUser(req: Request, res: Response, _next: NextFunction) {
+export async function addAuthenticatedUser(req: Request, res: Response, _next: NextFunction) {
   try {
-  } catch (err) {}
+    const entity: UserStoreEntity = {
+      username: req.session.passport.user.username,
+      email: req.session.passport.user.forumsEmail,
+      forums_id: req.session.passport.user.forumsId,
+      discord_id: req.session.passport.user.id,
+      teamspeak_id: req.session.passport.user.teamspeakId
+    }
+
+    const deleted: boolean = await storeClient.deleteOldEntry(entity.username)
+    await storeClient.add(entity)
+
+    res.status(200).json({ hadPrevious: deleted, user: entity })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+/**
+ * Configuration options for the OAuth2 passport provider
+ * @type {OAuth2Strategy.StrategyOptions}
+ */
+const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
+  clientID: process.env.DISCORD_CLIENT_ID as string,
+  clientSecret: process.env.DISCORD_CLIENT_SECRET as string,
+  authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
+  tokenURL: 'https://discordapp.com/api/oauth2/token',
+  callbackURL: 'http://localhost:8080/auth/discord/callback',
+  scope: ['identify']
 }
 
 /**
