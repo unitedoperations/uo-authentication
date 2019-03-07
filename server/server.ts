@@ -1,6 +1,7 @@
 import * as http from 'http'
 import * as express from 'express'
 import * as session from 'express-session'
+import * as cookieParser from 'cookie-parser'
 import * as helmet from 'helmet'
 import * as compression from 'compression'
 import * as morgan from 'morgan'
@@ -23,14 +24,21 @@ expressApp.set('port', process.env.PORT || 8080)
 expressApp.use(morgan('dev'))
 expressApp.use(helmet())
 expressApp.use(compression())
+expressApp.use(cookieParser())
 expressApp.use(express.json())
 expressApp.use(express.urlencoded({ extended: false }))
 expressApp.use(
-  // TODO: Update to use secure cookies
   session({
-    secret: process.env.DISCORD_CLIENT_SECRET,
+    name: 'sessionId',
+    secret: `${process.env.DISCORD_CLIENT_SECRET}${process.env.FORUMS_API_KEY}`,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+      path: '/',
+      // TODO: domain: 'unitedoperations.net',
+      httpOnly: true,
+      expires: new Date(Date.now() + 60 * 60 * 1000)
+    }
   })
 )
 expressApp.use(passport.initialize())

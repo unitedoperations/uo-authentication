@@ -44,7 +44,7 @@ class Charter extends React.Component<{}, CharterState> {
             <Message.Header>Community Charter</Message.Header>
             All members of United Operations are required to read and adhere to the community
             charter and SOPs. Read both wiki documents and then click "I have read and agree" to
-            enable to rest of the authentication process.
+            enable the rest of the authentication process.
             <Message.List>
               <Message.Item>
                 {this.state.charterClicked && <Icon name="check" color="green" />}
@@ -67,6 +67,11 @@ class Charter extends React.Component<{}, CharterState> {
                 </a>
               </Message.Item>
             </Message.List>
+            <br />
+            <em>
+              (The toggle will remain disabled until you have visited both websites via the provided
+              links)
+            </em>
           </Message.Content>
         </Message>
         <div className="auth-charter--toggle">

@@ -58,7 +58,7 @@ class Home extends React.Component<IndexPageProps, IndexPageState> {
                 <Icon name="warning" />
                 <Message.Content>
                   <Message.Header>Note</Message.Header>
-                  Prior executing the Teamspeak authentication provider, be sure that you are
+                  Prior to executing the Teamspeak authentication provider, be sure that you are
                   currently logged into the United Operations Teamspeak server!
                 </Message.Content>
               </Message>
