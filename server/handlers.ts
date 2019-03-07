@@ -137,7 +137,7 @@ export async function verifyForums(req: Request, res: Response, _next: NextFunct
 
     res.redirect(`/auth/complete?ref=forums&status=${forumsUser !== null ? 'success' : 'failed'}`)
   } catch (err) {
-    io.sockets.emit('auth_error', err.message)
+    io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
     res.redirect('/auth/complete?ref=forums&status=error')
   }
 }
@@ -159,7 +159,7 @@ export async function verifyTeamspeak(req: Request, res: Response, _next: NextFu
     req.session.passport.user.teamspeakId = 'kh42fno4eijp2jc2o'
     res.redirect(`/auth/complete?ref=teamspeak&status=${found ? 'success' : 'failed'}`)
   } catch (err) {
-    io.sockets.emit('auth_error', err.message)
+    io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
     res.redirect('/auth/complete?ref=teamspeak&status=error')
   }
 }
@@ -211,10 +211,11 @@ export async function completeAuthProvider(req: Request, res: Response, _next: N
     provider: ref,
     next
   }
-  io.sockets.emit('auth_attempt', socketData)
+
+  io.sockets.connected[req.cookies.ioId].emit('auth_attempt', socketData)
 
   if (status === 'success' && ref === 'teamspeak') {
-    io.sockets.emit('auth_complete', req.session.passport.user.username)
+    io.sockets.connected[req.cookies.ioId].emit('auth_complete', req.session.passport.user.username)
   }
 
   nextHandler(req, res)

@@ -19,5 +19,3 @@ export function validateAPIKey(req: Request, res: Response, next: NextFunction) 
     res.status(403).json({ error: 'invalid or missing API key in headers.' })
   }
 }
-
-// export function restoreSession(req: Request, res: Response, next: NextFunction) {}

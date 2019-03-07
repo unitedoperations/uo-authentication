@@ -5,7 +5,7 @@ import { AuthenticationProvider, AuthenticationAttempt } from '../server/server'
 import { emitter } from '../pages/index'
 
 export interface AuthenticationPanelListProps {
-  socket: SocketIO.Socket
+  socket: SocketIOClient.Socket
   enabled: boolean
 }
 
@@ -110,6 +110,7 @@ class AuthenticationPanelList extends React.Component<
   }
 
   componentDidMount() {
+    this.props.socket.connect()
     this.subscribe()
   }
 
@@ -118,6 +119,7 @@ class AuthenticationPanelList extends React.Component<
   }
 
   componentWillUnmount() {
+    this.props.socket.disconnect()
     this.props.socket.off('auth_attempt', this.handleAuthAttempt)
   }
 

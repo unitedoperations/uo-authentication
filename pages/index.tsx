@@ -11,7 +11,7 @@ import '../static/styles.css'
 export const emitter = new EventEmitter()
 
 export interface IndexPageProps {
-  socket: SocketIO.Socket
+  socket: SocketIOClient.Socket
 }
 
 export interface IndexPageState {

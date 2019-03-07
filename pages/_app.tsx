@@ -3,7 +3,7 @@ import App, { Container } from 'next/app'
 import io from 'socket.io-client'
 
 export interface UOAuthenticationAppState {
-  socket: any
+  socket: SocketIOClient.Socket
 }
 
 class UOAuthenticationApp extends App<any, UOAuthenticationAppState> {
@@ -20,7 +20,9 @@ class UOAuthenticationApp extends App<any, UOAuthenticationAppState> {
   }
 
   componentDidMount() {
-    const socket = io('http://localhost:8080')
+    const socket = io('http://localhost:8080', {
+      autoConnect: false
+    })
     this.setState({ socket })
   }
 

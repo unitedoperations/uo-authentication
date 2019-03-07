@@ -74,7 +74,8 @@ expressApp.get('*', (req, res) => {
 
 export const server: http.Server = new http.Server(expressApp)
 export const io: socketIO.Server = socketIO(server, {
-  serveClient: false
+  serveClient: false,
+  cookie: 'ioId'
 })
 
 io.sockets.on('connection', socket => {
