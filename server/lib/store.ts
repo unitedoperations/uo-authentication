@@ -28,7 +28,7 @@ class StoreClient {
   constructor() {
     this._store = new Datastore({
       projectId: process.env.GOOGLE_PROJECT_ID,
-      credentials: require('../../gcp-key.json')
+      credentials: require('../../keys/datastore-svc-key.json')
     })
   }
 

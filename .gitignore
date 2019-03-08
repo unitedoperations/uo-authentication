@@ -16,5 +16,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-/api-keys.txt
-/gcp-key.json
+/keys

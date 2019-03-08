@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import * as OAuth2Strategy from 'passport-oauth2'
 import fetch, { RequestInit } from 'node-fetch'
+import * as Pusher from 'pusher'
 import * as shortid from 'shortid'
 import storeClient, { UserStoreEntity } from './lib/store'
 import mailClient from './lib/mail'
@@ -15,7 +16,7 @@ type Fields = {
   }
 }
 
-type ForumGroup = {
+type ForumsGroup = {
   id: number
   name: string
   formattedName: string
@@ -41,8 +42,8 @@ type ForumsUser = {
   title: string
   timeZone: string
   formattedName: string
-  primaryGroup: ForumGroup[]
-  secondaryGroups: ForumGroup[]
+  primaryGroup: ForumsGroup
+  secondaryGroups: ForumsGroup[]
   email: string
   joined: string
   registrationIpAddress: string
@@ -63,6 +64,38 @@ type ForumsUser = {
 }
 
 /**
+ * Object containing the mappings for the most common forums
+ * groups to the corresponding Discord roles on the server
+ * @type {Record<string, string>}
+ */
+// TODO: Update UI to alert of discord roles being assigned
+const DiscordRoleMap: Record<string, string> = {
+  Administrators: 'Owner',
+  Officers: 'Officers',
+  'Game Server Officer': 'GSO Officers',
+  'Web Server Officer': 'WSO Officers',
+  'Public Relations Officer': 'PSO Officers',
+  'UOAF Officer': 'AFO Officers',
+  Regulars: 'Regulars',
+  'MMO - DELEGATES': 'MMO Delegates',
+  'UOTC Delegate': 'UOTC Delegates',
+  'UOTC Instructor': 'UOTC D (Instructor)'
+}
+
+/**
+ * Pusher SDK instance to act as a publisher for downstream
+ * platform application
+ * @type {Pusher}
+ */
+const publisher: Pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID,
+  key: process.env.PUSHER_KEY,
+  secret: process.env.PUSHER_SECRET,
+  cluster: process.env.PUSHER_CLUSTER,
+  encrypted: true
+})
+
+/**
  * Creates the HTTP request options object for fetch calls
  * @param {Partial<RequestInit>} [others = {}]
  * @returns {RequestInit}
@@ -76,20 +109,46 @@ const requestOptions = (other: Partial<RequestInit> = {}): RequestInit => ({
 })
 
 /**
+ * Publishes an event to the Pusher platform stream on the appropriate channel
+ * for containing a payload that specifies the Discord user ID and a list
+ * of roles to be assigned to that user by the server's chatbot. The chatbot on Discord
+ * will be listening for events on this channel and will assign roles accordiningly.
+ * @param {string} discordId
+ * @param {string} username
+ */
+async function publishDiscordRoleEvent(discordId: string, username: string) {
+  const user: ForumsUser | null = await getForumsUser(username)
+  const roles: string[] = [user.primaryGroup.name, ...user.secondaryGroups.map(g => g.name)]
+    .map(g => DiscordRoleMap[g] || null)
+    .filter(r => r)
+
+  publisher.trigger('discord_permissions', 'assign', { id: discordId, roles })
+}
+
+/**
  * Check whether there is a user registered on the forums with
  * the same username as found in the Discord OAuth user process
  * @param {string} username
- * @returns {Promise<{ id: number, email: string } | null>}
+ * @returns {Promise<ForumsUser | null>}
  */
-async function getForumsUser(username: string): Promise<{ id: number; email: string } | null> {
+async function getForumsUser(username: string): Promise<ForumsUser | null> {
   const res = await fetch(
     `${process.env.FORUMS_API_BASE}/core/members&name=${encodeURIComponent(username)}`,
     requestOptions()
   )
   const users: ForumsUser[] = await res.json().then(res => res.results)
 
-  if (users.length === 0) return null
-  return { id: users[0].id, email: users[0].email }
+  if (users.length === 0) {
+    return null
+  } else if (users.length === 1) {
+    return users[0]
+  } else {
+    for (const u of users) {
+      if (u.name === username) return u
+    }
+  }
+
+  return null
 }
 
 /**
@@ -128,7 +187,7 @@ async function getTeamspeakUser(_username: string): Promise<boolean> {
 export async function verifyForums(req: Request, res: Response, _next: NextFunction) {
   try {
     const { username } = req.session.passport.user
-    const forumsUser: { email: string; id: number } | null = await getForumsUser(username)
+    const forumsUser: ForumsUser | null = await getForumsUser(username)
 
     if (forumsUser) {
       req.session.passport.user.forumsId = forumsUser.id
@@ -268,6 +327,7 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
 
     const deleted: boolean = await storeClient.deleteOldEntry(entity.username)
     await storeClient.add(entity)
+    await publishDiscordRoleEvent(entity.discord_id, entity.username)
 
     res.status(200).json({ hadPrevious: deleted, user: entity })
   } catch (err) {

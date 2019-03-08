@@ -2,7 +2,9 @@ import { readFileSync } from 'fs'
 import { Request, Response, NextFunction } from 'express'
 import { resolve } from 'path'
 
-const apiKeys: string[] = readFileSync(resolve(__dirname, '../../api-keys.txt'), 'utf8').split('\n')
+const apiKeys: string[] = readFileSync(resolve(__dirname, '../../keys/api-keys.txt'), 'utf8').split(
+  '\n'
+)
 
 /**
  * Route middleware to validate the API key provided in the
