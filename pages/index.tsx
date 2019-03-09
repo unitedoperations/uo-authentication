@@ -5,6 +5,7 @@ import Page from '../components/Page'
 import Charter from '../components/Charter'
 import AuthenticationPanelList from '../components/AuthenticationPanelList'
 import CompletionModal from '../components/CompletionModal'
+import CookiePolicy from '../components/CookiePolicy'
 import 'semantic-ui-css/semantic.min.css'
 import '../static/styles.css'
 
@@ -70,6 +71,7 @@ class Home extends React.Component<IndexPageProps, IndexPageState> {
           )}
           <CompletionModal open={this.state.authenticationDone} username={this.state.username} />
         </Container>
+        <CookiePolicy />
       </Page>
     )
   }
