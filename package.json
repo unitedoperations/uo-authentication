@@ -1,5 +1,6 @@
 {
   "name": "uo-auth",
+  "version": "1.0.0-rc",
   "scripts": {
     "dev": "nodemon",
     "build": "next build && tsc --project tsconfig.server.json",
@@ -18,6 +19,7 @@
     "morgan": "^1.9.1",
     "next": "8.0.3",
     "node-fetch": "^2.3.0",
+    "node-teamspeak": "^1.0.10",
     "nodemailer": "^5.1.1",
     "passport": "^0.4.0",
     "passport-oauth2": "^1.4.0",

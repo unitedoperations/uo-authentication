@@ -5,8 +5,11 @@ import * as Pusher from 'pusher'
 import * as shortid from 'shortid'
 import storeClient, { UserStoreEntity } from './lib/store'
 import mailClient from './lib/mail'
+import tsClient from './lib/teamspeak'
 import { io, AuthenticationAttempt } from './server'
 import { nextHandler } from './nextApp'
+
+type Nullable<T> = T | null | undefined
 
 type Fields = {
   [k: string]: {
@@ -20,20 +23,6 @@ type ForumsGroup = {
   id: number
   name: string
   formattedName: string
-}
-
-type DiscordUser = {
-  id: string
-  username: string
-  discriminator: string
-  avatar: string | null
-  bot?: boolean
-  mfa_enabled?: boolean
-  locale?: string
-  verified?: boolean
-  email: string
-  flags: number
-  premium_type?: number
 }
 
 type ForumsUser = {
@@ -61,6 +50,32 @@ type ForumsUser = {
   profileViews: number
   birthday: string
   customFields: Fields
+}
+
+type DiscordUser = {
+  id: string
+  username: string
+  discriminator: string
+  avatar: Nullable<string>
+  bot?: boolean
+  mfa_enabled?: boolean
+  locale?: string
+  verified?: boolean
+  email: string
+  flags: number
+  premium_type?: number
+}
+
+type TeamspeakUser = {
+  cid: number
+  client_unqiue_identifier: string
+  client_nickname: string
+  client_servergroups: string
+  client_created: number
+  client_lastconencted: number
+  client_totalconnections: number
+  client_country: string
+  connection_client_ip: string
 }
 
 /**
@@ -116,8 +131,8 @@ const requestOptions = (other: Partial<RequestInit> = {}): RequestInit => ({
  * @param {string} discordId
  * @param {string} username
  */
-async function publishDiscordRoleEvent(discordId: string, username: string) {
-  const user: ForumsUser | null = await getForumsUser(username)
+async function publishDiscordAddRoleEvent(discordId: string, username: string) {
+  const user: Nullable<ForumsUser> = await getForumsUser(username)
   const roles: string[] = [user.primaryGroup.name, ...user.secondaryGroups.map(g => g.name)]
     .map(g => DiscordRoleMap[g] || null)
     .filter(r => r)
@@ -126,12 +141,22 @@ async function publishDiscordRoleEvent(discordId: string, username: string) {
 }
 
 /**
+ * Publishes the role revocation event to the Pusher platform on the Discord
+ * permissioning channel. The chatbot is listening for these events to reset and
+ * Discord user ID's server roles.
+ * @param {string} discordId
+ */
+async function publishDiscordRemoveRoleEvent(discordId: string) {
+  publisher.trigger('discord_permissions', 'revoke', { id: discordId })
+}
+
+/**
  * Check whether there is a user registered on the forums with
  * the same username as found in the Discord OAuth user process
  * @param {string} username
  * @returns {Promise<ForumsUser | null>}
  */
-async function getForumsUser(username: string): Promise<ForumsUser | null> {
+async function getForumsUser(username: string): Promise<Nullable<ForumsUser>> {
   const res = await fetch(
     `${process.env.FORUMS_API_BASE}/core/members&name=${encodeURIComponent(username)}`,
     requestOptions()
@@ -156,23 +181,16 @@ async function getForumsUser(username: string): Promise<ForumsUser | null> {
  * there is a user matching the argued username on the server
  * @export
  * @param {string} username
- * @returns {Promise<boolean>}
+ * @returns {Promise<TeamspeakUser | null>}
  */
-async function getTeamspeakUser(_username: string): Promise<boolean> {
-  // const ts = new TeamSpeakClient('ts3.unitedoperations.net:9987')
-  // return ts.send(
-  //   'login',
-  //   { client_login_name: 'UOAuthenticator', client_login_password: 'grits' },
-  //   (err: Error, _res: any, _raw: any) => {
-  //     if (err) throw err
-  //     ts.send('clientlist', (err: Error, res: any, _raw: any) => {
-  //       if (err) throw err
-  //       console.log(res)
-  //       return true
-  //     })
-  //   }
-  // )
-  return true
+async function getTeamspeakUser(username: string): Promise<Nullable<TeamspeakUser>> {
+  const client: Nullable<Pick<TeamspeakUser, 'cid' | 'client_nickname'>> = await tsClient.send(
+    'clientfind',
+    { pattern: username }
+  )
+  if (!client) return null
+
+  return tsClient.send('clientinfo', { clid: client.cid })
 }
 
 /**
@@ -187,7 +205,7 @@ async function getTeamspeakUser(_username: string): Promise<boolean> {
 export async function verifyForums(req: Request, res: Response, _next: NextFunction) {
   try {
     const { username } = req.session.passport.user
-    const forumsUser: ForumsUser | null = await getForumsUser(username)
+    const forumsUser: Nullable<ForumsUser> = await getForumsUser(username)
 
     if (forumsUser) {
       req.session.passport.user.forumsId = forumsUser.id
@@ -210,13 +228,12 @@ export async function verifyForums(req: Request, res: Response, _next: NextFunct
  * @param {Response} res
  * @param {NextFunction} _next
  */
-// TODO:
 export async function verifyTeamspeak(req: Request, res: Response, _next: NextFunction) {
   try {
     const { username } = req.session.passport.user
-    const found: boolean = await getTeamspeakUser(username)
-    req.session.passport.user.teamspeakId = 'kh42fno4eijp2jc2o'
-    res.redirect(`/auth/complete?ref=teamspeak&status=${found ? 'success' : 'failed'}`)
+    const client: Nullable<TeamspeakUser> = await getTeamspeakUser(username)
+    req.session.passport.user.teamspeakId = client.client_unqiue_identifier
+    res.redirect(`/auth/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`)
   } catch (err) {
     io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
     res.redirect('/auth/complete?ref=teamspeak&status=error')
@@ -314,7 +331,6 @@ export async function issueToken(req: Request, res: Response, _next: NextFunctio
  * @param {Response} res
  * @param {NextFunction} _next
  */
-// TODO:
 export async function addAuthenticatedUser(req: Request, res: Response, _next: NextFunction) {
   try {
     const entity: UserStoreEntity = {
@@ -325,11 +341,17 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
       teamspeak_id: req.session.passport.user.teamspeakId
     }
 
-    const deleted: boolean = await storeClient.deleteOldEntry(entity.username)
-    await storeClient.add(entity)
-    await publishDiscordRoleEvent(entity.discord_id, entity.username)
+    const oldEntity: Nullable<UserStoreEntity> = await storeClient.deleteOldEntry(entity.username)
+    if (oldEntity) {
+      await publishDiscordRemoveRoleEvent(entity.discord_id)
+    }
 
-    res.status(200).json({ hadPrevious: deleted, user: entity })
+    await storeClient.add(entity)
+    await publishDiscordAddRoleEvent(entity.discord_id, entity.username)
+
+    // TODO: Revoke old and assign new Teamspeak server groups
+
+    res.status(200).json({ hadPrevious: oldEntity !== null, user: entity })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

@@ -1,5 +1,8 @@
 import { Datastore, Query } from '@google-cloud/datastore'
 
+type Nullable<T> = T | null
+type Throwable<T> = T | never
+
 export type UserStoreEntity = {
   username: string
   email: string
@@ -58,21 +61,21 @@ class StoreClient {
   /**
    * If an old authentication entry exists for a user, delete it
    * @param {string} username
-   * @returns {Promise<boolean>}
+   * @returns {Promise<UserStoreEntity | null>}
    * @memberof StoreClient
    */
-  async deleteOldEntry(username: string): Promise<boolean> {
+  async deleteOldEntry(username: string): Promise<Nullable<UserStoreEntity>> {
     let entity: UserStoreEntity
 
     try {
       entity = await this.find(username)
     } catch (_err) {
-      return false
+      return null
     }
 
     const key = this._store.key(['User', entity[this._store.KEY].id])
     await this._store.delete(key)
-    return true
+    return entity
   }
 
   /**
@@ -83,7 +86,7 @@ class StoreClient {
    * @returns {(Promise<UserStoreEntity> | never)}
    * @memberof StoreClient
    */
-  async find(username: string): Promise<UserStoreEntity> | never {
+  async find(username: string): Throwable<Promise<UserStoreEntity>> {
     const query: Query = this._store.createQuery('User').filter('username', '=', username)
     const [users] = await this._store.runQuery(query)
 
