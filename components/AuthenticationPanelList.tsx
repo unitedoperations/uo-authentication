@@ -20,6 +20,9 @@ export interface AuthenticationPanelListState {
   shouldSubscribe: boolean
   subscribed: boolean
   methods: Record<AuthenticationProvider, AuthMethod>
+  showGroups: boolean
+  groupsThatWillTransfer: string[]
+  groupsThatWontTransfer: string[]
 }
 
 class AuthenticationPanelList extends React.Component<
@@ -48,7 +51,10 @@ class AuthenticationPanelList extends React.Component<
         enabled: false,
         status: 'unstarted'
       }
-    }
+    },
+    showGroups: false,
+    groupsThatWillTransfer: [],
+    groupsThatWontTransfer: []
   }
 
   static getDerivedStateFromProps(
@@ -64,13 +70,17 @@ class AuthenticationPanelList extends React.Component<
       this.props.socket.on('auth_attempt', this.handleAuthAttempt)
       this.props.socket.on('auth_error', this.handleAuthError)
       this.props.socket.on('auth_complete', this.handleAuthComplete)
+      this.props.socket.on('group_transfers', this.handleGroupTransfers)
       this.setState({ subscribed: true })
     }
   }
 
-  handleAuthAttempt = (data: AuthenticationAttempt) => {
-    const { provider, next } = data
-    if (!data.success) {
+  handleGroupTransfers = ({ will, wont }: { will: string[]; wont: string[] }) => {
+    this.setState({ showGroups: true, groupsThatWillTransfer: will, groupsThatWontTransfer: wont })
+  }
+
+  handleAuthAttempt = ({ success, provider, next }: AuthenticationAttempt) => {
+    if (!success) {
       this.setState(prev => ({
         methods: {
           ...prev.methods,
@@ -121,21 +131,32 @@ class AuthenticationPanelList extends React.Component<
   componentWillUnmount() {
     this.props.socket.disconnect()
     this.props.socket.off('auth_attempt', this.handleAuthAttempt)
+    this.props.socket.off('auth_error', this.handleAuthError)
+    this.props.socket.off('auth_complete', this.handleAuthComplete)
+    this.props.socket.off('group_transfers', this.handleGroupTransfers)
   }
 
   render() {
     return (
-      <Card.Group className="auth-method--group" itemsPerRow={3}>
-        {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
-          <AuthenticationPanel
-            key={i}
-            enabled={m.enabled && m.status !== 'success'}
-            status={m.status}
-            name={m.name}
-            image={m.image}
-          />
-        ))}
-      </Card.Group>
+      <>
+        <Card.Group className="auth-method--group" itemsPerRow={3}>
+          {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
+            <AuthenticationPanel
+              key={i}
+              enabled={m.enabled && m.status !== 'success'}
+              status={m.status}
+              name={m.name}
+              image={m.image}
+            />
+          ))}
+        </Card.Group>
+        {this.state.showGroups && (
+          <Card>
+            {this.state.groupsThatWillTransfer}
+            {this.state.groupsThatWontTransfer}
+          </Card>
+        )}
+      </>
     )
   }
 }

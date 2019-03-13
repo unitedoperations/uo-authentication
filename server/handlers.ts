@@ -3,98 +3,70 @@ import * as OAuth2Strategy from 'passport-oauth2'
 import fetch, { RequestInit } from 'node-fetch'
 import * as Pusher from 'pusher'
 import * as shortid from 'shortid'
-import storeClient, { UserStoreEntity } from './lib/store'
+import storeClient from './lib/store'
 import mailClient from './lib/mail'
 import tsClient from './lib/teamspeak'
 import { io, AuthenticationAttempt } from './server'
 import { nextHandler } from './nextApp'
-
-type Nullable<T> = T | null | undefined
-
-type Fields = {
-  [k: string]: {
-    name: string
-    value?: string
-    fields?: Fields
-  }
-}
-
-type ForumsGroup = {
-  id: number
-  name: string
-  formattedName: string
-}
-
-type ForumsUser = {
-  id: number
-  name: string
-  title: string
-  timeZone: string
-  formattedName: string
-  primaryGroup: ForumsGroup
-  secondaryGroups: ForumsGroup[]
-  email: string
-  joined: string
-  registrationIpAddress: string
-  warningPoints: number
-  reputationPoints: number
-  photoUrl: string
-  photoUrlIsDefault: boolean
-  coverPhotoUrl: string
-  profileUrl: string
-  validating: boolean
-  posts: number
-  lastActivity: string
-  lastVisit: string
-  lastPost: string
-  profileViews: number
-  birthday: string
-  customFields: Fields
-}
-
-type DiscordUser = {
-  id: string
-  username: string
-  discriminator: string
-  avatar: Nullable<string>
-  bot?: boolean
-  mfa_enabled?: boolean
-  locale?: string
-  verified?: boolean
-  email: string
-  flags: number
-  premium_type?: number
-}
-
-type TeamspeakUser = {
-  cid: number
-  client_unqiue_identifier: string
-  client_nickname: string
-  client_servergroups: string
-  client_created: number
-  client_lastconencted: number
-  client_totalconnections: number
-  client_country: string
-  connection_client_ip: string
-}
+import {
+  Nullable,
+  ForumsUser,
+  TeamspeakUser,
+  DiscordUser,
+  UserStoreEntity,
+  TeamspeakGroups
+} from './types'
 
 /**
  * Object containing the mappings for the most common forums
  * groups to the corresponding Discord roles on the server
- * @type {Record<string, string>}
+ * @type {Record<string, { discord?: string, ts?: TeamspeakGroups }>}
  */
-// TODO: Update UI to alert of discord roles being assigned
-const DiscordRoleMap: Record<string, string> = {
-  Administrators: 'Owner',
-  Officers: 'Officers',
-  'Game Server Officer': 'GSO Officers',
-  'Web Server Officer': 'WSO Officers',
-  'Public Relations Officer': 'PSO Officers',
-  'UOAF Officer': 'AFO Officers',
-  Regulars: 'Regulars',
-  'MMO - DELEGATES': 'MMO Delegates',
-  'UOTC Delegate': 'UOTC Delegates',
-  'UOTC Instructor': 'UOTC D (Instructor)'
+// TODO: Update UI to alert of roles being assigned
+const ForumsGroupMap: Record<string, { discord?: string; ts?: TeamspeakGroups }> = {
+  Administrators: {
+    discord: 'Owner'
+  },
+  Officers: {
+    discord: 'Officers',
+    ts: TeamspeakGroups.Officer
+  },
+  'Donating Officers': {
+    ts: TeamspeakGroups.DonorOfficer
+  },
+  'Game Server Officer': {
+    discord: 'GSO Officers',
+    ts: TeamspeakGroups.GameServerOfficer
+  },
+  'Web Server Officer': {
+    discord: 'WSO Officers',
+    ts: TeamspeakGroups.WebServerOfficer
+  },
+  'Public Relations Officer': {
+    discord: 'PSO Officers',
+    ts: TeamspeakGroups.PublicRelationsOfficer
+  },
+  'UOAF Officer': {
+    discord: 'AFO Officers',
+    ts: TeamspeakGroups.AirForcesOfficer
+  },
+  Regulars: {
+    discord: 'Regulars',
+    ts: TeamspeakGroups.Regular
+  },
+  'Donating Regulars': {
+    ts: TeamspeakGroups.DonorRegular
+  },
+  'MMO - DELEGATES': {
+    discord: 'MMO Delegates'
+  },
+  'UOTC Delegate': {
+    discord: 'UOTC Delegates'
+  },
+  'UOTC Instructor': {
+    discord: 'UOTC D (Instructor)',
+    ts: TeamspeakGroups.UOTCInstructor
+  }
 }
 
 /**
@@ -107,7 +79,7 @@ const publisher: Pusher = new Pusher({
   key: process.env.PUSHER_KEY,
   secret: process.env.PUSHER_SECRET,
   cluster: process.env.PUSHER_CLUSTER,
-  encrypted: true
+  useTLS: true
 })
 
 /**
@@ -134,7 +106,7 @@ const requestOptions = (other: Partial<RequestInit> = {}): RequestInit => ({
 async function publishDiscordAddRoleEvent(discordId: string, username: string) {
   const user: Nullable<ForumsUser> = await getForumsUser(username)
   const roles: string[] = [user.primaryGroup.name, ...user.secondaryGroups.map(g => g.name)]
-    .map(g => DiscordRoleMap[g] || null)
+    .map(g => ForumsGroupMap[g].discord || null)
     .filter(r => r)
 
   publisher.trigger('discord_permissions', 'assign', { id: discordId, roles })
@@ -196,7 +168,9 @@ async function getTeamspeakUser(username: string): Promise<Nullable<TeamspeakUse
 /**
  * Verify that a use exists on the forums for session's passport user
  * and attaches the forum ID and email to the session user if they do
- * exist on the forums
+ * exist on the forums. Sends a socket event to the front-end distinguishing
+ * with groups assigned to the forums account will and won't be tranfered by
+ * the system on the respective platforms
  * @export
  * @param {Request} req
  * @param {Response} res
@@ -212,6 +186,19 @@ export async function verifyForums(req: Request, res: Response, _next: NextFunct
       req.session.passport.user.forumsEmail = forumsUser.email
     }
 
+    const groupsAssignedOnForums: string[] = [
+      forumsUser.primaryGroup.name,
+      ...forumsUser.secondaryGroups.map(g => g.name)
+    ]
+    const willTransfer: string[] = Object.keys(ForumsGroupMap).filter(k =>
+      groupsAssignedOnForums.includes(k)
+    )
+    const wontTransfer: string[] = groupsAssignedOnForums.filter(g => !willTransfer.includes(g))
+
+    io.sockets.connected[req.cookies.ioId].emit('group_transfers', {
+      will: willTransfer,
+      wont: wontTransfer
+    })
     res.redirect(`/auth/complete?ref=forums&status=${forumsUser !== null ? 'success' : 'failed'}`)
   } catch (err) {
     io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
@@ -233,6 +220,7 @@ export async function verifyTeamspeak(req: Request, res: Response, _next: NextFu
     const { username } = req.session.passport.user
     const client: Nullable<TeamspeakUser> = await getTeamspeakUser(username)
     req.session.passport.user.teamspeakId = client.client_unqiue_identifier
+    req.session.passport.user.ip = client.connection_client_ip
     res.redirect(`/auth/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`)
   } catch (err) {
     io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
@@ -338,10 +326,12 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
       email: req.session.passport.user.forumsEmail,
       forums_id: req.session.passport.user.forumsId,
       discord_id: req.session.passport.user.id,
-      teamspeak_id: req.session.passport.user.teamspeakId
+      teamspeak_id: req.session.passport.user.teamspeakId,
+      ip: req.session.passport.user.ip,
+      createdAt: new Date().toISOString()
     }
 
-    const oldEntity: Nullable<UserStoreEntity> = await storeClient.deleteOldEntry(entity.username)
+    const oldEntity: Nullable<UserStoreEntity> = await storeClient.archiveEntry(entity.username)
     if (oldEntity) {
       await publishDiscordRemoveRoleEvent(entity.discord_id)
     }

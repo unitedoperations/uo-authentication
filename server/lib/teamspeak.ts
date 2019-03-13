@@ -17,34 +17,87 @@ class TeamspeakClient {
    */
   constructor(address: string) {
     this._ts = new Teamspeak(address)
+    this._connect()
   }
 
   /**
-   * Issues a Teamspeak server command after logging in and returns
-   * the result of the command after quiting the session
+   * Promise wrapper for issuing a Teamspeak server command and returns
+   * the result of the command as the resolution
    * @param {string} cmd
    * @param {Record<string, any>} [payload]
    * @returns {Promise<any>}
    * @memberof TeamspeakClient
    */
   send(cmd: string, payload?: Record<string, any>): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        await this._login()
-        this._ts.send(cmd, payload, (err: Error, res: any) => {
-          if (err) reject(err)
-          this._ts.send('quit')
-          resolve(res)
-        })
-      } catch (err) {
-        reject(err)
-      }
+    return new Promise((resolve, reject) => {
+      this._ts.send(cmd, payload, (err: Error, res: any) => {
+        if (err) reject(err)
+        resolve(res)
+      })
     })
   }
 
   /**
-   * Initiates the login procedure for the client
-   * that is required before sending commands
+   * Assign a specific Teamspeak client a list of server group's by ID
+   * @param {number[]} groupIds
+   * @param {number} clientDBId
+   * @memberof TeamspeakClient
+   */
+  async assign(groupIds: number[], clientDBId: number) {
+    try {
+      for (const id of groupIds) {
+        await this.send('servergroupaddclient', { sgid: id, cldbid: clientDBId })
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  /**
+   * Remove all server groups from the given client database ID
+   * @param {number} clientDBId
+   * @memberof TeamspeakClient
+   */
+  async remove(clientDBId: number) {
+    try {
+      const res: any | any[] = await this.send('servergroupsbyclientid', { cldbid: clientDBId })
+      const sgids: number[] = res instanceof Array ? res.map(r => r.sgid) : [res.sgid]
+
+      for (const id of sgids) {
+        await this.send('servergroupdelclient', { sgid: id, cldbid: clientDBId })
+      }
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  /**
+   * Sends the 'quit' command for the TS client
+   * to terminate its session and disconnect from the server
+   * @memberof TeamspeakClient
+   */
+  disconnect() {
+    this.send('quit')
+  }
+
+  /**
+   * Begin the Teamspeak client session to persist
+   * through the duration of the application
+   * @private
+   * @memberof TeamspeakClient
+   */
+  private async _connect() {
+    try {
+      await this._login()
+      await this._use(1)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  /**
+   * Promise wrapper for the Teamspeak
+   * client 'login' command
    * @private
    * @returns {Promise<void>}
    * @memberof TeamspeakClient
@@ -59,12 +112,25 @@ class TeamspeakClient {
         },
         (err: Error) => {
           if (err) reject(err)
-          this._ts.send('use', { sid: 1 }, (err: Error) => {
-            if (err) reject(err)
-            resolve()
-          })
+          resolve()
         }
       )
+    })
+  }
+
+  /**
+   * Promise wrapper for the Teamspeak 'use' command
+   * @private
+   * @param {number} [sid=1]
+   * @returns {Promise<void>}
+   * @memberof TeamspeakClient
+   */
+  private _use(sid: number = 1): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this._ts.send('use', { sid }, (err: Error) => {
+        if (err) reject(err)
+        resolve()
+      })
     })
   }
 }

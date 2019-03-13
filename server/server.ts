@@ -35,7 +35,6 @@ expressApp.use(
     saveUninitialized: true,
     cookie: {
       path: '/',
-      // TODO: domain: 'unitedoperations.net',
       httpOnly: true,
       expires: new Date(Date.now() + 60 * 60 * 1000)
     }

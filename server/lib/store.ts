@@ -1,21 +1,5 @@
 import { Datastore, Query } from '@google-cloud/datastore'
-
-type Nullable<T> = T | null
-type Throwable<T> = T | never
-
-export type UserStoreEntity = {
-  username: string
-  email: string
-  forums_id: number
-  discord_id: string
-  teamspeak_id: string
-}
-
-export type EntityData = {
-  name: string
-  value: any
-  excludeFromIndexes: boolean
-}
+import { UserStoreEntity, EntityData, Nullable, Throwable } from '../types'
 
 /**
  * Client to handle interactions with the Google Cloud Datastore instance
@@ -43,10 +27,10 @@ class StoreClient {
    */
   async add(user: UserStoreEntity) {
     const key = this._store.key('User')
-    const data: EntityData[] = Object.entries(user).map(([k, v]) => ({
+    const data: EntityData[] = Object.entries(user).map(([k, v]: [keyof UserStoreEntity, any]) => ({
       name: k,
       value: v,
-      excludeFromIndexes: k !== 'username' && k !== 'email'
+      excludeFromIndexes: k !== 'forums_id'
     }))
 
     try {
@@ -59,12 +43,13 @@ class StoreClient {
   }
 
   /**
-   * If an old authentication entry exists for a user, delete it
+   * If an old authentication entry exists for a user, delete it from the active list
+   * and add it to the archives of authentications
    * @param {string} username
    * @returns {Promise<UserStoreEntity | null>}
    * @memberof StoreClient
    */
-  async deleteOldEntry(username: string): Promise<Nullable<UserStoreEntity>> {
+  async archiveEntry(username: string): Promise<Nullable<UserStoreEntity>> {
     let entity: UserStoreEntity
 
     try {
@@ -73,8 +58,15 @@ class StoreClient {
       return null
     }
 
-    const key = this._store.key(['User', entity[this._store.KEY].id])
-    await this._store.delete(key)
+    const archiveKey = this._store.key({
+      namespace: 'archived_auths',
+      path: ['User', entity[this._store.KEY].id]
+    })
+    await this._store.save({ key: archiveKey, data: entity })
+
+    const deleteKey = this._store.key(['User', entity[this._store.KEY].id])
+    await this._store.delete(deleteKey)
+
     return entity
   }
 
