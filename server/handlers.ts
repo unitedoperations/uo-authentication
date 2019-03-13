@@ -24,12 +24,12 @@ import {
  */
 // TODO: Update UI to alert of roles being assigned
 const ForumsGroupMap: Record<string, { discord?: string; ts?: TeamspeakGroups }> = {
-  Administrators: {
-    discord: 'Owner'
+  Members: {
+    ts: TeamspeakGroups.Member
   },
-  Officers: {
-    discord: 'Officers',
-    ts: TeamspeakGroups.Officer
+  'Donating Members': {
+    discord: 'Donors',
+    ts: TeamspeakGroups.DonorMember
   },
   'Donating Officers': {
     ts: TeamspeakGroups.DonorOfficer
@@ -348,7 +348,7 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
 }
 
 /**
- * Configuration options for the OAuth2 passport provider
+ * Configuration options for the OAuth2 Discord passport provider
  * @type {OAuth2Strategy.StrategyOptions}
  */
 const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
@@ -366,3 +366,16 @@ const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
  * @export
  */
 export const DiscordAuth: OAuth2Strategy = new OAuth2Strategy(oauth2DiscordOptions, verifyDiscord)
+
+/**
+ * Configuration options for the OAuth2 Forums passport provider
+ * @type {OAuth2Strategy.StrategyOptions}
+ */
+// TODO: const oauth2ForumsOptions: OAuth2Strategy.StrategyOptions = {}
+
+/**
+ * ForumsAuth
+ * @type {OAuth2Strategy}
+ * @export
+ */
+// TODO: export const ForumsAuth: OAuth2Strategy = new OAuth2Strategy(oauth2ForumsOptions, verifyForums)

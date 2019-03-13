@@ -20,9 +20,6 @@ export interface AuthenticationPanelListState {
   shouldSubscribe: boolean
   subscribed: boolean
   methods: Record<AuthenticationProvider, AuthMethod>
-  showGroups: boolean
-  groupsThatWillTransfer: string[]
-  groupsThatWontTransfer: string[]
 }
 
 class AuthenticationPanelList extends React.Component<
@@ -51,10 +48,7 @@ class AuthenticationPanelList extends React.Component<
         enabled: false,
         status: 'unstarted'
       }
-    },
-    showGroups: false,
-    groupsThatWillTransfer: [],
-    groupsThatWontTransfer: []
+    }
   }
 
   static getDerivedStateFromProps(
@@ -75,8 +69,8 @@ class AuthenticationPanelList extends React.Component<
     }
   }
 
-  handleGroupTransfers = ({ will, wont }: { will: string[]; wont: string[] }) => {
-    this.setState({ showGroups: true, groupsThatWillTransfer: will, groupsThatWontTransfer: wont })
+  handleGroupTransfers = (groups: { will: string[]; wont: string[] }) => {
+    emitter.emit('groups', groups)
   }
 
   handleAuthAttempt = ({ success, provider, next }: AuthenticationAttempt) => {
@@ -138,25 +132,17 @@ class AuthenticationPanelList extends React.Component<
 
   render() {
     return (
-      <>
-        <Card.Group className="auth-method--group" itemsPerRow={3}>
-          {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
-            <AuthenticationPanel
-              key={i}
-              enabled={m.enabled && m.status !== 'success'}
-              status={m.status}
-              name={m.name}
-              image={m.image}
-            />
-          ))}
-        </Card.Group>
-        {this.state.showGroups && (
-          <Card>
-            {this.state.groupsThatWillTransfer}
-            {this.state.groupsThatWontTransfer}
-          </Card>
-        )}
-      </>
+      <Card.Group className="auth-method--group" itemsPerRow={3}>
+        {Object.values(this.state.methods).map((m: AuthMethod, i: number) => (
+          <AuthenticationPanel
+            key={i}
+            enabled={m.enabled && m.status !== 'success'}
+            status={m.status}
+            name={m.name}
+            image={m.image}
+          />
+        ))}
+      </Card.Group>
     )
   }
 }

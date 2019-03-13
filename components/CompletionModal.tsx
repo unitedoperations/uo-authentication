@@ -26,8 +26,10 @@ class CompletionModal extends React.PureComponent<CompletionModalProps, Completi
         <Header icon="unlock" content="Authentication Complete" />
         <Modal.Content>
           {this.props.username}, you're now authenticated in the United Operations system! You will
-          have access to use the Discord server, Teamspeak server, and the forums shortly. Click the
-          'Finish' button and you can close this page.
+          have access to use the Discord server, Teamspeak server, and the forums shortly. Be sure
+          to contact a United Operations officer to have any non-transferred user groups manually
+          reassigned to you on the respective platforms. Click the 'Finish' button and you can close
+          this page.
         </Modal.Content>
         <Modal.Actions>
           <Button onClick={this.submitForUserStorage} color="green" basic inverted>
