@@ -86,7 +86,7 @@ class Home extends React.Component<IndexPageProps, IndexPageState> {
                     <Message.Header>Platform Groups</Message.Header>
                     The following green groups <em>will</em> be assigned on their respective
                     platforms, and the red groups <em>will not</em> be automatically reassigned on
-                    the supported platforms due to risk and security purposes. Please contact and
+                    the supported platforms due to risk and security purposes. Please contact an
                     officer to be manually reassigned to the groups indicated by the red labels on
                     each supporting platform.
                     <br />

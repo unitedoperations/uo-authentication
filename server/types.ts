@@ -8,6 +8,7 @@ export type UserStoreEntity = {
   forums_id: number
   discord_id: string
   teamspeak_id: string
+  teamspeak_db_id: number
   ip: string
   createdAt: string
 }

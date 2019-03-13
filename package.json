@@ -2,7 +2,7 @@
   "name": "uo-auth",
   "version": "1.0.0-rc",
   "scripts": {
-    "dev": "nodemon",
+    "dev": "NODE_ENV=development nodemon",
     "build": "next build && tsc --project tsconfig.server.json",
     "start": "NODE_ENV=production node dist/index.js",
     "tunnel": "lt --port 8080 --subdomain uo-auth-dev"

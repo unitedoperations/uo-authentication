@@ -46,28 +46,32 @@ class StoreClient {
    * If an old authentication entry exists for a user, delete it from the active list
    * and add it to the archives of authentications
    * @param {string} username
-   * @returns {Promise<UserStoreEntity | null>}
+   * @returns {Promise<boolean>}
    * @memberof StoreClient
    */
-  async archiveEntry(username: string): Promise<Nullable<UserStoreEntity>> {
+  async archiveEntry(username: string): Promise<boolean> {
     let entity: UserStoreEntity
 
     try {
       entity = await this.find(username)
     } catch (_err) {
-      return null
+      return false
     }
 
-    const archiveKey = this._store.key({
-      namespace: 'archived_auths',
-      path: ['User', entity[this._store.KEY].id]
-    })
-    await this._store.save({ key: archiveKey, data: entity })
+    try {
+      const archiveKey = this._store.key({
+        namespace: 'archived_auths',
+        path: ['User', entity[this._store.KEY].id]
+      })
+      await this._store.save({ key: archiveKey, data: entity })
 
-    const deleteKey = this._store.key(['User', entity[this._store.KEY].id])
-    await this._store.delete(deleteKey)
+      const deleteKey = this._store.key(['User', entity[this._store.KEY].id])
+      await this._store.delete(deleteKey)
 
-    return entity
+      return true
+    } catch (_err) {
+      return false
+    }
   }
 
   /**

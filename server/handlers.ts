@@ -22,7 +22,6 @@ import {
  * groups to the corresponding Discord roles on the server
  * @type {Record<string, { discord?: string, ts?: TeamspeakGroups }>}
  */
-// TODO: Update UI to alert of roles being assigned
 const ForumsGroupMap: Record<string, { discord?: string; ts?: TeamspeakGroups }> = {
   Members: {
     ts: TeamspeakGroups.Member
@@ -96,30 +95,18 @@ const requestOptions = (other: Partial<RequestInit> = {}): RequestInit => ({
 })
 
 /**
- * Publishes an event to the Pusher platform stream on the appropriate channel
- * for containing a payload that specifies the Discord user ID and a list
- * of roles to be assigned to that user by the server's chatbot. The chatbot on Discord
- * will be listening for events on this channel and will assign roles accordiningly.
- * @param {string} discordId
+ * Creates a list of Discord and Teamspeak roles that should be assigned to a given user
  * @param {string} username
+ * @returns {[ number[], string[] ]}
  */
-async function publishDiscordAddRoleEvent(discordId: string, username: string) {
+async function getPlatformGroups(username: string): Promise<[number[], string[]]> {
   const user: Nullable<ForumsUser> = await getForumsUser(username)
-  const roles: string[] = [user.primaryGroup.name, ...user.secondaryGroups.map(g => g.name)]
-    .map(g => ForumsGroupMap[g].discord || null)
-    .filter(r => r)
+  const forumGroups: string[] = [user.primaryGroup.name, ...user.secondaryGroups.map(g => g.name)]
 
-  publisher.trigger('discord_permissions', 'assign', { id: discordId, roles })
-}
-
-/**
- * Publishes the role revocation event to the Pusher platform on the Discord
- * permissioning channel. The chatbot is listening for these events to reset and
- * Discord user ID's server roles.
- * @param {string} discordId
- */
-async function publishDiscordRemoveRoleEvent(discordId: string) {
-  publisher.trigger('discord_permissions', 'revoke', { id: discordId })
+  return [
+    forumGroups.map(g => ForumsGroupMap[g].ts || null).filter(r => r),
+    forumGroups.map(g => ForumsGroupMap[g].discord || null).filter(r => r)
+  ]
 }
 
 /**
@@ -220,6 +207,7 @@ export async function verifyTeamspeak(req: Request, res: Response, _next: NextFu
     const { username } = req.session.passport.user
     const client: Nullable<TeamspeakUser> = await getTeamspeakUser(username)
     req.session.passport.user.teamspeakId = client.client_unqiue_identifier
+    req.session.passport.user.teamspeakDBId = client.client_database_id
     req.session.passport.user.ip = client.connection_client_ip
     res.redirect(`/auth/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`)
   } catch (err) {
@@ -327,21 +315,26 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
       forums_id: req.session.passport.user.forumsId,
       discord_id: req.session.passport.user.id,
       teamspeak_id: req.session.passport.user.teamspeakId,
+      teamspeak_db_id: req.session.passport.user.teamspeakDBId,
       ip: req.session.passport.user.ip,
       createdAt: new Date().toISOString()
     }
 
-    const oldEntity: Nullable<UserStoreEntity> = await storeClient.archiveEntry(entity.username)
-    if (oldEntity) {
-      await publishDiscordRemoveRoleEvent(entity.discord_id)
+    const hadPrevious: boolean = await storeClient.archiveEntry(entity.username)
+    if (process.env.NODE_ENV === 'production') {
+      if (hadPrevious) {
+        publisher.trigger('discord_permissions', 'revoke', { id: entity.discord_id })
+        await tsClient.remove(entity.teamspeak_db_id)
+      }
+
+      const [tsGroups, disRoles] = await getPlatformGroups(entity.username)
+
+      await storeClient.add(entity)
+      await tsClient.assign(tsGroups, entity.teamspeak_db_id)
+      publisher.trigger('discord_permissions', 'assign', { id: entity.discord_id, roles: disRoles })
     }
 
-    await storeClient.add(entity)
-    await publishDiscordAddRoleEvent(entity.discord_id, entity.username)
-
-    // TODO: Revoke old and assign new Teamspeak server groups
-
-    res.status(200).json({ hadPrevious: oldEntity !== null, user: entity })
+    res.status(200).json({ hadPrevious, user: entity })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
