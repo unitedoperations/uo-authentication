@@ -1,0 +1,14 @@
+{
+  "short_name": "UO Auth",
+  "name": "United Operations User Authentication",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "display": "standalone",
+  "theme_color": "#b19e71",
+  "background_color": "#0d0d0d"
+}

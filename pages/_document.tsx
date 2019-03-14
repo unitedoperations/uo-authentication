@@ -14,6 +14,8 @@ class SpireDocument extends Document {
             name="description"
             content="United Operations gaming community user authentcation system"
           />
+          <link rel="manifest" href="/static/manifest.json" />
+          <link rel="shortcut icon" href="/static/favicon.ico" />
         </Head>
         <body>
           <Main />
