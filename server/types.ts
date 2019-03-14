@@ -16,7 +16,7 @@ export type UserStoreEntity = {
 export type EntityData = {
   name: keyof UserStoreEntity
   value: any
-  excludeFromIndexes: boolean
+  excludeFromIndexes?: boolean
 }
 
 export type Fields = {

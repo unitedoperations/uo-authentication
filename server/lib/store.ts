@@ -29,8 +29,7 @@ class StoreClient {
     const key = this._store.key('User')
     const data: EntityData[] = Object.entries(user).map(([k, v]: [keyof UserStoreEntity, any]) => ({
       name: k,
-      value: v,
-      excludeFromIndexes: k !== 'forums_id'
+      value: v
     }))
 
     try {
