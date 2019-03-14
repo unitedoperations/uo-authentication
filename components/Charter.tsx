@@ -51,6 +51,7 @@ class Charter extends React.Component<{}, CharterState> {
                 <a
                   onClick={_e => this.handleLinkClicked('charter')}
                   href="https://wiki.unitedoperations.net/wiki/United_Operations_Charter"
+                  rel="noreferrer"
                   target="_blank"
                 >
                   Charter
@@ -61,6 +62,7 @@ class Charter extends React.Component<{}, CharterState> {
                 <a
                   onClick={_e => this.handleLinkClicked('sops')}
                   href="https://wiki.unitedoperations.net/wiki/Category:Standard_Operating_Procedures"
+                  rel="noreferrer"
                   target="_blank"
                 >
                   SOPs
