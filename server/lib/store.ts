@@ -1,5 +1,5 @@
 import { Datastore, Query } from '@google-cloud/datastore'
-import { UserStoreEntity, EntityData, Nullable, Throwable } from '../types'
+import { UserStoreEntity, EntityData, Throwable } from '../types'
 
 /**
  * Client to handle interactions with the Google Cloud Datastore instance
@@ -45,28 +45,26 @@ class StoreClient {
   /**
    * If an old authentication entry exists for a user, delete it from the active list
    * and add it to the archives of authentications
-   * @param {string} username
+   * @param {number} forumsId
    * @returns {Promise<boolean>}
    * @memberof StoreClient
    */
-  async archiveEntry(username: string): Promise<boolean> {
+  async archiveEntry(forumsId: number): Promise<boolean> {
     let entity: UserStoreEntity
 
     try {
-      entity = await this.find(username)
+      entity = await this.find(forumsId)
     } catch (_err) {
       return false
     }
 
     try {
       const archiveKey = this._store.key({
-        namespace: 'archived_auths',
-        path: ['User', entity[this._store.KEY].id]
+        namespace: 'history',
+        path: ['User']
       })
       await this._store.save({ key: archiveKey, data: entity })
-
-      const deleteKey = this._store.key(['User', entity[this._store.KEY].id])
-      await this._store.delete(deleteKey)
+      await this._store.delete(entity[this._store.KEY])
 
       return true
     } catch (_err) {
@@ -78,16 +76,16 @@ class StoreClient {
    * Filter the authenticated users datastore for entities with
    * that argued username. If none are found throw an error.
    * @throws
-   * @param {string} username
+   * @param {number} forumsId
    * @returns {(Promise<UserStoreEntity> | never)}
    * @memberof StoreClient
    */
-  async find(username: string): Throwable<Promise<UserStoreEntity>> {
-    const query: Query = this._store.createQuery('User').filter('username', '=', username)
+  async find(forumsId: number): Throwable<Promise<UserStoreEntity>> {
+    const query: Query = this._store.createQuery('User').filter('forums_id', '=', forumsId)
     const [users] = await this._store.runQuery(query)
 
     if (users.length >= 1) return users[0]
-    else throw new Error(`No authenticated users found for ${username}`)
+    else throw new Error(`No authenticated users found for ${forumsId}`)
   }
 }
 

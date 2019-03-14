@@ -77,7 +77,7 @@ export type DiscordUser = {
 export type TeamspeakUser = {
   cid: number
   client_database_id: number
-  client_unqiue_identifier: string
+  client_unique_identifier: string
   client_nickname: string
   client_servergroups: string
   client_created: number

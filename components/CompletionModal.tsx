@@ -15,9 +15,9 @@ class CompletionModal extends React.PureComponent<CompletionModalProps, Completi
     closed: false
   }
 
-  submitForUserStorage = () => {
+  submitForUserStorage = async () => {
     this.setState({ closed: true })
-    fetch('/auth/save', { method: 'POST' })
+    fetch('/auth/save', { method: 'PUT' })
   }
 
   render() {

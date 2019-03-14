@@ -65,7 +65,7 @@ expressApp.get(
 expressApp.get('/auth/forums', handlers.verifyForums)
 expressApp.get('/auth/teamspeak', handlers.verifyTeamspeak)
 expressApp.get('/auth/complete', handlers.completeAuthProvider)
-expressApp.post('/auth/save', handlers.addAuthenticatedUser)
+expressApp.put('/auth/save', handlers.addAuthenticatedUser)
 expressApp.post('/auth/token', cors(), validateAPIKey, handlers.issueToken)
 expressApp.get('*', (req, res) => {
   nextHandler(req, res)

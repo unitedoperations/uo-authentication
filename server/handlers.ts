@@ -143,13 +143,13 @@ async function getForumsUser(username: string): Promise<Nullable<ForumsUser>> {
  * @returns {Promise<TeamspeakUser | null>}
  */
 async function getTeamspeakUser(username: string): Promise<Nullable<TeamspeakUser>> {
-  const client: Nullable<Pick<TeamspeakUser, 'cid' | 'client_nickname'>> = await tsClient.send(
+  const client: Nullable<{ clid: number; client_nickname: string }> = await tsClient.send(
     'clientfind',
     { pattern: username }
   )
   if (!client) return null
 
-  return tsClient.send('clientinfo', { clid: client.cid })
+  return tsClient.send('clientinfo', { clid: client.clid })
 }
 
 /**
@@ -206,7 +206,7 @@ export async function verifyTeamspeak(req: Request, res: Response, _next: NextFu
   try {
     const { username } = req.session.passport.user
     const client: Nullable<TeamspeakUser> = await getTeamspeakUser(username)
-    req.session.passport.user.teamspeakId = client.client_unqiue_identifier
+    req.session.passport.user.teamspeakId = client.client_unique_identifier
     req.session.passport.user.teamspeakDBId = client.client_database_id
     req.session.passport.user.ip = client.connection_client_ip
     res.redirect(`/auth/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`)
@@ -320,7 +320,8 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
       createdAt: new Date().toISOString()
     }
 
-    const hadPrevious: boolean = await storeClient.archiveEntry(entity.username)
+    const hadPrevious: boolean = await storeClient.archiveEntry(entity.forums_id)
+    await storeClient.add(entity)
     if (process.env.NODE_ENV === 'production') {
       if (hadPrevious) {
         publisher.trigger('discord_permissions', 'revoke', { id: entity.discord_id })
@@ -328,8 +329,6 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
       }
 
       const [tsGroups, disRoles] = await getPlatformGroups(entity.username)
-
-      await storeClient.add(entity)
       await tsClient.assign(tsGroups, entity.teamspeak_db_id)
       publisher.trigger('discord_permissions', 'assign', { id: entity.discord_id, roles: disRoles })
     }
