@@ -52,7 +52,7 @@ class StoreClient {
     let entity: UserStoreEntity
 
     try {
-      entity = await this.find(forumsId)
+      entity = await this.find({ forumsId })
     } catch (_err) {
       return false
     }
@@ -75,16 +75,22 @@ class StoreClient {
    * Filter the authenticated users datastore for entities with
    * that argued username. If none are found throw an error.
    * @throws
-   * @param {number} forumsId
+   * @param {{ forumsId?: number, username?: string}} filters
    * @returns {(Promise<UserStoreEntity> | never)}
    * @memberof StoreClient
    */
-  async find(forumsId: number): Throwable<Promise<UserStoreEntity>> {
-    const query: Query = this._store.createQuery('User').filter('forums_id', '=', forumsId)
+  async find(filters: {
+    forumsId?: number
+    username?: string
+  }): Throwable<Promise<UserStoreEntity>> {
+    let query: Query = this._store.createQuery('User')
+    if (filters.forumsId) query = query.filter('forums_id', '=', filters.forumsId)
+    if (filters.username) query = query.filter('username', '=', filters.username)
+
     const [users] = await this._store.runQuery(query)
 
     if (users.length >= 1) return users[0]
-    else throw new Error(`No authenticated users found for ${forumsId}`)
+    else throw new Error(`No authenticated users found for ${JSON.stringify(filters)}`)
   }
 }
 

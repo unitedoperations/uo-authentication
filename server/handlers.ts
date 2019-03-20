@@ -287,13 +287,13 @@ export async function completeAuthProvider(req: Request, res: Response, _next: N
  */
 export async function issueToken(req: Request, res: Response, _next: NextFunction) {
   try {
-    const { username } = req.body
-    const token = shortid.generate()
+    const { username }: { username: string } = req.body
+    const token: string = shortid.generate()
 
-    const user = await storeClient.find(username)
+    const user = await storeClient.find({ username })
     await mailClient.send(token, user.email)
 
-    res.status(200).json({ ttl: 300, token })
+    res.status(200).json({ token })
   } catch (err) {
     res.status(404).json({ error: err.message })
   }
