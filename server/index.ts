@@ -5,9 +5,8 @@ import nextApp from './nextApp'
 nextApp
   .prepare()
   .then(() => {
-    server.listen(expressApp.get('port'), (err: any) => {
-      if (err) throw err
-      console.log(`Listening on :${expressApp.get('port')}`)
+    server.listen(expressApp.get('port'), () => {
+      console.log(`🚀 Listening on :${expressApp.get('port')}`)
     })
   })
   .catch(console.error)

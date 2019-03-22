@@ -81,7 +81,7 @@ class AuthenticationPanel extends React.Component<
           </Card.Header>
           <Card.Content textAlign="center">
             {this.props.enabled && (
-              <Link href={`/auth/${this.props.name.toLowerCase()}`}>
+              <Link href={`/api/oauth2/${this.props.name.toLowerCase()}`}>
                 <a target="_blank">
                   <Button
                     onClick={this.handleButtonClick}

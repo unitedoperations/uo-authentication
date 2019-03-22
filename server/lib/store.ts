@@ -14,6 +14,7 @@ class StoreClient {
 
   constructor() {
     this._store = new Datastore({
+      namespace: 'active',
       projectId: process.env.GOOGLE_PROJECT_ID,
       credentials: require('../../keys/datastore-svc-key.json')
     })
@@ -84,6 +85,7 @@ class StoreClient {
     username?: string
   }): Throwable<Promise<UserStoreEntity>> {
     let query: Query = this._store.createQuery('User')
+    query.namespace = 'active'
     if (filters.forumsId) query = query.filter('forums_id', '=', filters.forumsId)
     if (filters.username) query = query.filter('username', '=', filters.username)
 

@@ -3,7 +3,7 @@ const withTypescript = require('@zeit/next-typescript')
 
 module.exports = withTypescript(
   withCSS({
-    target: 'serverless',
+    target: 'server',
     webpack(config) {
       config.module.rules.push({
         test: /\.(png|svg|eot|otf|ttf|woff|woff2)$/,

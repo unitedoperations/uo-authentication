@@ -24,7 +24,7 @@ class MailClient {
   /**
    * Send an email to the target user with their authentication token
    * as part of the process when verifying user identities using the
-   * /auth/token endpoint of the API
+   * /api/token endpoint of the API
    * @param {string} token
    * @param {string} email
    * @memberof MailClient

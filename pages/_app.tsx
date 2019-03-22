@@ -20,7 +20,7 @@ class UOAuthenticationApp extends App<any, UOAuthenticationAppState> {
   }
 
   componentDidMount() {
-    const socket = io('http://localhost:8080', {
+    const socket = io('https://auth.unitedoperations.net', {
       autoConnect: false
     })
     this.setState({ socket })

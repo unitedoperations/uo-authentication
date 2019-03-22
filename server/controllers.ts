@@ -24,6 +24,7 @@ import {
  */
 const ForumsGroupMap: Record<string, { discord?: string; ts?: TeamspeakGroups }> = {
   Members: {
+    discord: 'Members',
     ts: TeamspeakGroups.Member
   },
   'Donating Members': {
@@ -186,10 +187,12 @@ export async function verifyForums(req: Request, res: Response, _next: NextFunct
       will: willTransfer,
       wont: wontTransfer
     })
-    res.redirect(`/auth/complete?ref=forums&status=${forumsUser !== null ? 'success' : 'failed'}`)
+    res.redirect(
+      `/api/oauth2/complete?ref=forums&status=${forumsUser !== null ? 'success' : 'failed'}`
+    )
   } catch (err) {
     io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
-    res.redirect('/auth/complete?ref=forums&status=error')
+    res.redirect('/api/oauth2/complete?ref=forums&status=error')
   }
 }
 
@@ -209,10 +212,12 @@ export async function verifyTeamspeak(req: Request, res: Response, _next: NextFu
     req.session.passport.user.teamspeakId = client.client_unique_identifier
     req.session.passport.user.teamspeakDBId = client.client_database_id
     req.session.passport.user.ip = client.connection_client_ip
-    res.redirect(`/auth/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`)
+    res.redirect(
+      `/api/oauth2/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`
+    )
   } catch (err) {
     io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
-    res.redirect('/auth/complete?ref=teamspeak&status=error')
+    res.redirect('/api/oauth2/complete?ref=teamspeak&status=error')
   }
 }
 
@@ -348,7 +353,7 @@ const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
   clientSecret: process.env.DISCORD_CLIENT_SECRET as string,
   authorizationURL: 'https://discordapp.com/api/oauth2/authorize',
   tokenURL: 'https://discordapp.com/api/oauth2/token',
-  callbackURL: 'http://localhost:8080/auth/discord/callback',
+  callbackURL: 'https://auth.unitedoperations.net/api/oauth2/discord/callback',
   scope: ['identify']
 }
 
@@ -358,16 +363,3 @@ const oauth2DiscordOptions: OAuth2Strategy.StrategyOptions = {
  * @export
  */
 export const DiscordAuth: OAuth2Strategy = new OAuth2Strategy(oauth2DiscordOptions, verifyDiscord)
-
-/**
- * Configuration options for the OAuth2 Forums passport provider
- * @type {OAuth2Strategy.StrategyOptions}
- */
-// TODO: const oauth2ForumsOptions: OAuth2Strategy.StrategyOptions = {}
-
-/**
- * ForumsAuth
- * @type {OAuth2Strategy}
- * @export
- */
-// TODO: export const ForumsAuth: OAuth2Strategy = new OAuth2Strategy(oauth2ForumsOptions, verifyForums)

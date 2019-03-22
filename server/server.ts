@@ -8,8 +8,10 @@ import * as morgan from 'morgan'
 import * as cors from 'cors'
 import * as passport from 'passport'
 import * as socketIO from 'socket.io'
+import { Datastore } from '@google-cloud/datastore'
+import * as ConnectDatastore from '@google-cloud/connect-datastore'
 import { nextHandler } from './nextApp'
-import * as handlers from './handlers'
+import * as controllers from './controllers'
 import { validateAPIKey } from './lib/middleware'
 
 export type AuthenticationProvider = 'discord' | 'forums' | 'teamspeak'
@@ -27,8 +29,17 @@ expressApp.use(compression())
 expressApp.use(cookieParser())
 expressApp.use(express.json())
 expressApp.use(express.urlencoded({ extended: false }))
+
+const SessionDataStore = ConnectDatastore(session)
 expressApp.use(
   session({
+    store: new SessionDataStore({
+      dataset: new Datastore({
+        namespace: 'sessions',
+        projectId: process.env.GOOGLE_PROJECT_ID,
+        credentials: require('../keys/datastore-svc-key.json')
+      })
+    }),
     name: 'sessionId',
     secret: `${process.env.DISCORD_CLIENT_SECRET}${process.env.FORUMS_API_KEY}`,
     resave: false,
@@ -40,10 +51,11 @@ expressApp.use(
     }
   })
 )
+
 expressApp.use(passport.initialize())
 expressApp.use(passport.session())
 
-passport.use(handlers.DiscordAuth)
+passport.use(controllers.DiscordAuth)
 passport.serializeUser((user: unknown, done: any) => {
   done(null, user)
 })
@@ -51,22 +63,22 @@ passport.deserializeUser((user: unknown, done: any) => {
   done(null, user)
 })
 
-expressApp.get('/auth/discord', passport.authenticate('oauth2'))
+expressApp.get('/api/oauth2/discord', passport.authenticate('oauth2'))
 expressApp.get(
-  '/auth/discord/callback',
+  '/api/oauth2/discord/callback',
   passport.authenticate('oauth2', {
-    failureRedirect: '/auth/complete?ref=discord&status=fail'
+    failureRedirect: '/api/oauth2/complete?ref=discord&status=fail'
   }),
   (_req: express.Request, res: express.Response) => {
-    res.redirect('/auth/complete?ref=discord&status=success')
+    res.redirect('/api/oauth2/complete?ref=discord&status=success')
   }
 )
 
-expressApp.get('/auth/forums', handlers.verifyForums)
-expressApp.get('/auth/teamspeak', handlers.verifyTeamspeak)
-expressApp.get('/auth/complete', handlers.completeAuthProvider)
-expressApp.put('/auth/save', handlers.addAuthenticatedUser)
-expressApp.post('/auth/token', cors(), validateAPIKey, handlers.issueToken)
+expressApp.get('/api/oauth2/forums', controllers.verifyForums)
+expressApp.get('/api/oauth2/teamspeak', controllers.verifyTeamspeak)
+expressApp.get('/api/oauth2/complete', controllers.completeAuthProvider)
+expressApp.put('/api/save', controllers.addAuthenticatedUser)
+expressApp.post('/api/token', cors(), validateAPIKey, controllers.issueToken)
 expressApp.get('*', (req, res) => {
   nextHandler(req, res)
 })

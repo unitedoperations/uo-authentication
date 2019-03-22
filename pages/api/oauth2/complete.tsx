@@ -1,5 +1,5 @@
 import * as React from 'react'
-import Page from '../../components/Page'
+import Page from '../../../components/Page'
 
 class Complete extends React.Component {
   componentDidMount() {
