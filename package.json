@@ -4,8 +4,9 @@
   "scripts": {
     "clean": "rm -rf .next",
     "dev": "NODE_ENV=development nodemon",
-    "build": "NODE_ENV=production npm run clean && next build && tsc --project tsconfig.server.json && cp -r keys .next && cp .env .next",
-    "start": "NODE_ENV=production node .next/server"
+    "build": "NODE_ENV=production npm run clean && next build && tsc --project tsconfig.server.json && cp -r keys .next && cp .env .next && cp static/*.png .next/static",
+    "start": "node .next/server",
+    "deploy": "read -p \"GCP Project ID: \" PROJ_ID; gcloud --project $PROJ_ID app deploy app.yaml --version main --verbosity=debug"
   },
   "dependencies": {
     "@google-cloud/connect-datastore": "^2.0.2",
