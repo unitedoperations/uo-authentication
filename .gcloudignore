@@ -1,0 +1,11 @@
+.git
+.gitignore
+
+node_modules/
+pages/
+components/
+
+*.hot-update.js*
+README.md
+nodemon.json
+.babelrc
