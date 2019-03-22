@@ -71,6 +71,11 @@ class Home extends React.Component<IndexPageProps, IndexPageState> {
                 <Icon name="warning" />
                 <Message.Content>
                   <Message.Header>Note</Message.Header>
+                  It is required for successful authentication on all three platforms that you have
+                  a consistent username among them. Before proceeding, make sure that your username
+                  is <em>the same</em> on the forums, Discord server and the Teamspeak server!
+                  <br />
+                  <br />
                   Prior to executing the Teamspeak authentication provider, be sure that you are
                   currently logged into the United Operations Teamspeak server!
                 </Message.Content>

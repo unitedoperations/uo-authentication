@@ -105,8 +105,10 @@ class AuthenticationPanelList extends React.Component<
     }
   }
 
-  handleAuthError = (data: unknown) => {
-    alert(JSON.stringify(data))
+  handleAuthError = () => {
+    alert(
+      'You could not be found on the Teamspeak server. Ensure that you are logged into the server prior to running this authenticator.'
+    )
   }
 
   handleAuthComplete = (username: string) => {
