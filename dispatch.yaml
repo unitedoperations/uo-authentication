@@ -1,0 +1,3 @@
+dispatch:
+  - url: 'auth.unitedoperations.net/*'
+    service: default
