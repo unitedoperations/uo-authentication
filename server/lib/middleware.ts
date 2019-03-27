@@ -1,10 +1,12 @@
 import { readFileSync } from 'fs'
 import { Request, Response, NextFunction } from 'express'
 import { resolve } from 'path'
+import YAML from 'yaml'
 
-const apiKeys: string[] = readFileSync(resolve(__dirname, '../../keys/api-keys.txt'), 'utf8').split(
-  '\n'
+const apiKeys: { keys: { app: string; key: string }[] } = YAML.parse(
+  readFileSync(resolve(__dirname, '../../keys/api-keys.yaml'), 'utf8')
 )
+console.log(apiKeys)
 
 /**
  * Route middleware to validate the API key provided in the
@@ -16,8 +18,11 @@ const apiKeys: string[] = readFileSync(resolve(__dirname, '../../keys/api-keys.t
  */
 export function validateAPIKey(req: Request, res: Response, next: NextFunction) {
   const key = req.headers['x-api-key'] as string
-  if (apiKeys.includes(key)) next()
-  else {
-    res.status(403).json({ error: 'invalid or missing API key in headers.' })
+  for (const k of apiKeys.keys) {
+    if (k.key === key) {
+      next()
+      return
+    }
   }
+  res.status(403).json({ error: 'invalid or missing API key in headers.' })
 }
