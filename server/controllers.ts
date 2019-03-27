@@ -305,6 +305,24 @@ export async function issueToken(req: Request, res: Response, _next: NextFunctio
 }
 
 /**
+ * Uses the GCP datastore client to search for an authenticated user matching
+ * the request parameters and sends it back in a JSON payload
+ * @export
+ * @param {Request} req
+ * @param {Response} res
+ * @param {NextFunction} _next
+ */
+export async function getUserInfo(req: Request, res: Response, _next: NextFunction) {
+  try {
+    const { username } = req.query
+    const user = await storeClient.find({ username })
+    res.status(200).json({ user })
+  } catch (err) {
+    res.status(404).json({ error: err.message })
+  }
+}
+
+/**
  * Handles the router called specifically for saving the authentcation user
  * session and passport data in the Google Cloud datastore instance
  * @export
