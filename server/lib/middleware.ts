@@ -6,7 +6,6 @@ import YAML from 'yaml'
 const apiKeys: { keys: { app: string; key: string }[] } = YAML.parse(
   readFileSync(resolve(__dirname, '../../keys/api-keys.yaml'), 'utf8')
 )
-console.log(apiKeys)
 
 /**
  * Route middleware to validate the API key provided in the
