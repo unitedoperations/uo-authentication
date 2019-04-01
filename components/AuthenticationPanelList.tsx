@@ -14,6 +14,7 @@ export type AuthMethod = {
   image: string
   enabled: boolean
   status: string
+  link: string
 }
 
 export interface AuthenticationPanelListState {
@@ -34,19 +35,22 @@ class AuthenticationPanelList extends React.Component<
         name: 'Discord',
         image: 'Discord-Logo-Color.png',
         enabled: true,
-        status: 'unstarted'
+        status: 'unstarted',
+        link: 'https://discordapp.com/invite/0WqRco0nennZY05d'
       },
       forums: {
         name: 'Forums',
         image: 'uo-logo.png',
         enabled: false,
-        status: 'unstarted'
+        status: 'unstarted',
+        link: 'https://unitedoperations.net/forums'
       },
       teamspeak: {
         name: 'TeamSpeak',
         image: 'ts_stacked_blueblack.png',
         enabled: false,
-        status: 'unstarted'
+        status: 'unstarted',
+        link: 'http://www.teamspeak.com/invite/ts3.unitedoperations.net/'
       }
     }
   }
@@ -142,6 +146,7 @@ class AuthenticationPanelList extends React.Component<
             status={m.status}
             name={m.name}
             image={m.image}
+            link={m.link}
           />
         ))}
       </Card.Group>

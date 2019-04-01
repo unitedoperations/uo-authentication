@@ -7,6 +7,7 @@ export interface AuthenticationPanelProps {
   image: string
   enabled: boolean
   status: string
+  link: string
 }
 
 export interface AuthenticationPanelState {
@@ -75,7 +76,11 @@ class AuthenticationPanel extends React.Component<
                 height: '4em'
               }}
             >
-              <span style={{ flex: 1 }}>{this.props.name}</span>
+              <Link href={this.props.link}>
+                <a target="_blank">
+                  <span style={{ flex: 1 }}>{this.props.name}</span>
+                </a>
+              </Link>
               <Image src={`/static/${this.props.image}`} size="mini" />
             </div>
           </Card.Header>
