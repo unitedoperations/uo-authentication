@@ -77,8 +77,8 @@ class AuthenticationPanel extends React.Component<
               }}
             >
               <Link href={this.props.link}>
-                <a target="_blank">
-                  <span style={{ flex: 1 }}>{this.props.name}</span>
+                <a target="_blank" style={{ flex: 1 }}>
+                  <span>{this.props.name}</span>
                 </a>
               </Link>
               <Image src={`/static/${this.props.image}`} size="mini" />
