@@ -315,10 +315,14 @@ export async function issueToken(req: Request, res: Response, _next: NextFunctio
 export async function getUserInfo(req: Request, res: Response, _next: NextFunction) {
   try {
     const { username } = req.query
-    const user = await storeClient.find({ username })
-    res.status(200).json({ user })
+
+    let users: UserStoreEntity[]
+    if (username) users = [await storeClient.find({ username })]
+    else users = await storeClient.getAllUsers()
+
+    res.status(200).json({ users })
   } catch (err) {
-    res.status(404).json({ error: err.message })
+    res.status(404).json({ users: null, error: err.message })
   }
 }
 

@@ -79,7 +79,7 @@ expressApp.get('/api/oauth2/teamspeak', controllers.verifyTeamspeak)
 expressApp.get('/api/oauth2/complete', controllers.completeAuthProvider)
 expressApp.put('/api/save', controllers.addAuthenticatedUser)
 expressApp.post('/api/token', cors(), validateAPIKey, controllers.issueToken)
-expressApp.get('/api/user', cors(), validateAPIKey, controllers.getUserInfo)
+expressApp.get('/api/users', cors(), validateAPIKey, controllers.getUserInfo)
 expressApp.get('*', (req, res) => {
   nextHandler(req, res)
 })
