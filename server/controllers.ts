@@ -14,6 +14,7 @@ import {
   TeamspeakUser,
   DiscordUser,
   UserStoreEntity,
+  TeamspeakServerGroup,
   TeamspeakGroups
 } from './types'
 
@@ -315,10 +316,40 @@ export async function issueToken(req: Request, res: Response, _next: NextFunctio
 export async function getUserInfo(req: Request, res: Response, _next: NextFunction) {
   try {
     const { username } = req.query
-    const user = await storeClient.find({ username })
-    res.status(200).json({ user })
+
+    let users: UserStoreEntity[]
+    if (username) users = [await storeClient.find({ username })]
+    else users = await storeClient.getAllUsers()
+
+    res.status(200).json({ users })
   } catch (err) {
-    res.status(404).json({ error: err.message })
+    res.status(404).json({ users: null, error: err.message })
+  }
+}
+
+/**
+ * Collects the argued user's active server groups from Teamspeak
+ * @export
+ * @param {Request} req
+ * @param {Response} res
+ * @param {NextFunction} _next
+ */
+export async function getTeamspeakUserGroups(req: Request, res: Response, _next: NextFunction) {
+  try {
+    const { id } = req.query
+    let groups: TeamspeakServerGroup | TeamspeakServerGroup[] = await tsClient.send(
+      'servergroupsbyclientid',
+      {
+        cldbid: id
+      }
+    )
+    if (!(groups instanceof Array)) groups = [groups]
+
+    res
+      .status(200)
+      .json({ groups: groups.map(g => ({ sgid: g.sgid, name: g.name.replace(/\*\s+/g, '') })) })
+  } catch (err) {
+    res.status(404).json({ groups: null, error: err.message })
   }
 }
 

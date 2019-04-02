@@ -87,6 +87,12 @@ export type TeamspeakUser = {
   connection_client_ip: string
 }
 
+export type TeamspeakServerGroup = {
+  name: string
+  sgid: number
+  cldbid?: number
+}
+
 export enum TeamspeakGroups {
   PublicRelationsOfficer = 10,
   GameServerOfficer = 11,

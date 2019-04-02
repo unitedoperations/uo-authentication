@@ -94,6 +94,18 @@ class StoreClient {
     if (users.length >= 1) return users[0]
     else throw new Error(`No authenticated users found for ${JSON.stringify(filters)}`)
   }
+
+  /**
+   * Returns an array of all authenticated user entries in the datastore
+   * @returns {Promise<UserStoreEntity[]>}
+   * @memberof StoreClient
+   */
+  async getAllUsers(): Promise<UserStoreEntity[]> {
+    let query: Query = this._store.createQuery('User')
+    query.namespace = 'active'
+    const [users] = await this._store.runQuery(query)
+    return users || []
+  }
 }
 
 export default new StoreClient()
