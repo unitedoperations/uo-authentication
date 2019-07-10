@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express'
+import { credentials } from 'grpc'
 import * as OAuth2Strategy from 'passport-oauth2'
 import fetch, { RequestInit } from 'node-fetch'
-import * as Pusher from 'pusher'
 import * as shortid from 'shortid'
 import storeClient from './lib/store'
 import mailClient from './lib/mail'
 import tsClient from './lib/teamspeak'
+import protoDescriptor from './lib/grpcDescriptor'
 import { io, AuthenticationAttempt } from './server'
 import { nextHandler } from './nextApp'
 import {
@@ -71,17 +72,13 @@ const ForumsGroupMap: Record<string, { discord?: string; ts?: TeamspeakGroups }>
 }
 
 /**
- * Pusher SDK instance to act as a publisher for downstream
- * platform application
- * @type {Pusher}
+ * GRPC client for Discord bot interactions and role provisioning
  */
-const publisher: Pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER,
-  useTLS: true
-})
+// @ts-ignore
+const discordClient = new protoDescriptor.ProvisionService(
+  'localhost:50051',
+  credentials.createInsecure()
+)
 
 /**
  * Creates the HTTP request options object for fetch calls
@@ -378,13 +375,24 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
     await storeClient.add(entity)
     if (process.env.NODE_ENV === 'production') {
       if (hadPrevious) {
-        publisher.trigger('discord_permissions', 'revoke', { id: entity.discord_id })
+        discordClient.provision(
+          { id: entity.discord_id, assign: [], revoke: ['Symbol(all)'] },
+          (err: Error, res: any) => {
+            if (err || !res.success) throw new Error(JSON.stringify(err))
+          }
+        )
         await tsClient.remove(entity.teamspeak_db_id)
       }
 
       const [tsGroups, disRoles] = await getPlatformGroups(entity.username)
+      console.log(disRoles)
       await tsClient.assign(tsGroups, entity.teamspeak_db_id)
-      publisher.trigger('discord_permissions', 'assign', { id: entity.discord_id, roles: disRoles })
+      discordClient.provision(
+        { id: entity.discord_id, assign: disRoles, revoke: [] },
+        (err: Error, res: any) => {
+          if (err || !res.success) throw new Error(JSON.stringify(err))
+        }
+      )
     }
 
     res.status(200).json({ hadPrevious, user: entity })
