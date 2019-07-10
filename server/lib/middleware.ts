@@ -1,9 +1,9 @@
 import { readFileSync } from 'fs'
 import { Request, Response, NextFunction } from 'express'
 import { resolve } from 'path'
-import YAML from 'yaml'
+import { parse } from 'yaml'
 
-const apiKeys: { keys: { app: string; key: string }[] } = YAML.parse(
+const apiKeys: { keys: { app: string; key: string }[] } = parse(
   readFileSync(resolve(__dirname, '../../keys/api-keys.yaml'), 'utf8')
 )
 
