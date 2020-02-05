@@ -1,93 +1,63 @@
-import * as React from 'react'
+import React from 'react'
 import { Container, Message, Icon, Checkbox } from 'semantic-ui-react'
 import { emitter } from '../pages/index'
 
-export interface CharterState {
-  charterClicked: boolean
-  sopsClicked: boolean
-  canAccept: boolean
-  accepted: boolean
-}
+const Charter: React.FunctionComponent = () => {
+  const [charterClicked, setCharterClicked] = React.useState(false)
+  const [sopsClicked, setSOPsClicked] = React.useState(false)
+  const [canAccept, setCanAccept] = React.useState(false)
+  const [accepted, setAccepted] = React.useState(false)
 
-class Charter extends React.Component<{}, CharterState> {
-  state = {
-    charterClicked: false,
-    sopsClicked: false,
-    canAccept: false,
-    accepted: false
-  }
+  React.useEffect(() => {
+    emitter.emit('agreement', accepted)
+  }, [accepted])
 
-  handleLinkClicked = (link: string) => {
-    if (link === 'charter') this.setState({ charterClicked: true }, this.enableAccept)
-    else this.setState({ sopsClicked: true }, this.enableAccept)
-  }
+  React.useEffect(() => {
+    if (charterClicked && sopsClicked) setCanAccept(true)
+  }, [charterClicked, sopsClicked])
 
-  enableAccept = () => {
-    if (this.state.charterClicked && this.state.sopsClicked) this.setState({ canAccept: true })
-  }
-
-  handleAgreementClick = () => {
-    this.setState(
-      prev => ({ accepted: !prev.accepted }),
-      () => {
-        emitter.emit('agreement', this.state.accepted)
-      }
-    )
-  }
-
-  render() {
-    return (
-      <Container>
-        <Message icon>
-          <Icon name="file alternate outline" />
-          <Message.Content>
-            <Message.Header>Community Charter</Message.Header>
-            All members of United Operations are required to read and adhere to the community
-            charter and SOPs. Read both wiki documents and then click "I have read and agree" to
-            enable the rest of the authentication process.
-            <Message.List>
-              <Message.Item>
-                {this.state.charterClicked && <Icon name="check" color="green" />}
-                <a
-                  onClick={_e => this.handleLinkClicked('charter')}
-                  href="https://wiki.unitedoperations.net/wiki/United_Operations_Charter"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  Charter
-                </a>
-              </Message.Item>
-              <Message.Item>
-                {this.state.sopsClicked && <Icon name="check" color="green" />}
-                <a
-                  onClick={_e => this.handleLinkClicked('sops')}
-                  href="https://wiki.unitedoperations.net/wiki/Category:Standard_Operating_Procedures"
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  SOPs
-                </a>
-              </Message.Item>
-            </Message.List>
-            <br />
-            <em>
-              (The toggle will remain disabled until you have visited both websites via the provided
-              links)
-            </em>
-          </Message.Content>
-        </Message>
-        <div className="auth-charter--toggle">
-          <Checkbox
-            onClick={this.handleAgreementClick}
-            checked={this.state.accepted}
-            disabled={!this.state.canAccept}
-            toggle
-          />
-          <span>I have read and agree to the charter and SOPs, and wish to continue.</span>
-        </div>
-      </Container>
-    )
-  }
+  return (
+    <Container>
+      <Message icon>
+        <Icon name="file alternate outline" />
+        <Message.Content>
+          <Message.Header>Community Charter</Message.Header>
+          All members of United Operations are required to read and adhere to the community charter and SOPs. Read both
+          wiki documents and then click "I have read and agree" to enable the rest of the authentication process.
+          <Message.List>
+            <Message.Item>
+              {charterClicked && <Icon name="check" color="green" />}
+              <a
+                onClick={() => setCharterClicked(true)}
+                href="https://wiki.unitedoperations.net/wiki/United_Operations_Charter"
+                rel="noreferrer"
+                target="_blank"
+              >
+                Charter
+              </a>
+            </Message.Item>
+            <Message.Item>
+              {sopsClicked && <Icon name="check" color="green" />}
+              <a
+                onClick={() => setSOPsClicked(true)}
+                href="https://wiki.unitedoperations.net/wiki/Category:Standard_Operating_Procedures"
+                rel="noreferrer"
+                target="_blank"
+              >
+                SOPs
+              </a>
+            </Message.Item>
+          </Message.List>
+          <br />
+          <em>(The toggle will remain disabled until you have visited both websites via the provided links)</em>
+        </Message.Content>
+      </Message>
+      <div className="auth-charter--toggle">
+        <Checkbox onClick={() => setAccepted(!accepted)} checked={accepted} disabled={!canAccept} toggle />
+        <span>I have read and agree to the charter and SOPs, and wish to continue.</span>
+      </div>
+    </Container>
+  )
 }
 
 export default Charter

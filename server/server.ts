@@ -1,15 +1,16 @@
-import * as http from 'http'
-import * as express from 'express'
-import * as session from 'express-session'
-import * as cookieParser from 'cookie-parser'
-import * as helmet from 'helmet'
-import * as compression from 'compression'
-import * as morgan from 'morgan'
-import * as cors from 'cors'
-import * as passport from 'passport'
-import * as socketIO from 'socket.io'
+import http from 'http'
+import express from 'express'
+import session from 'express-session'
+import cookieParser from 'cookie-parser'
+import helmet from 'helmet'
+import compression from 'compression'
+import morgan from 'morgan'
+import cors from 'cors'
+import passport from 'passport'
+import socketIO from 'socket.io'
 import { Datastore } from '@google-cloud/datastore'
-import * as ConnectDatastore from '@google-cloud/connect-datastore'
+// @ts-ignore
+import ConnectDatastore from '@google-cloud/connect-datastore'
 import { nextHandler } from './nextApp'
 import * as controllers from './controllers'
 import { validateAPIKey } from './lib/middleware'
@@ -81,11 +82,7 @@ expressApp.get('/api/oauth2/complete', controllers.completeAuthProvider)
 expressApp.put('/api/save', controllers.addAuthenticatedUser)
 expressApp.post('/api/token', ...publicMiddleware, controllers.issueToken)
 expressApp.get('/api/users', ...publicMiddleware, controllers.getUserInfo)
-expressApp.get(
-  '/api/users/teamspeak/roles',
-  ...publicMiddleware,
-  controllers.getTeamspeakUserGroups
-)
+expressApp.get('/api/users/teamspeak/roles', ...publicMiddleware, controllers.getTeamspeakUserGroups)
 expressApp.get('*', (req, res) => {
   nextHandler(req, res)
 })

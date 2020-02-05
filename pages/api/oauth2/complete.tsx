@@ -1,7 +1,7 @@
 import * as React from 'react'
 import Page from '../../../components/Page'
 
-class Complete extends React.Component {
+class Complete extends React.PureComponent {
   componentDidMount() {
     window.close()
   }

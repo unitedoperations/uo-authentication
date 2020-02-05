@@ -1,13 +1,15 @@
 import * as React from 'react'
 import App, { Container } from 'next/app'
 import io from 'socket.io-client'
+import 'semantic-ui-css/semantic.min.css'
+import '../public/styles.css'
 
 export interface UOAuthenticationAppState {
   socket: SocketIOClient.Socket
 }
 
 class UOAuthenticationApp extends App<any, UOAuthenticationAppState> {
-  static async getInitialProps({ Component, ctx }) {
+  static async getInitialProps({ Component, ctx }: any) {
     let pageProps = {}
     if (Component.getInitialProps) {
       pageProps = await Component.getInitialProps(ctx)
@@ -27,6 +29,7 @@ class UOAuthenticationApp extends App<any, UOAuthenticationAppState> {
   }
 
   componentWillUnmount() {
+    // @ts-ignore
     this.state.socket.close()
   }
 
