@@ -28,17 +28,15 @@ class StoreClient {
    */
   async add(user: UserStoreEntity) {
     const key = this._store.key('User')
-    const data: EntityData[] = Object.entries(user).map(([k, v]: [keyof UserStoreEntity, any]) => ({
-      name: k,
+    const data: EntityData[] = Object.entries(user).map(([k, v]: [string, any]) => ({
+      name: k as keyof UserStoreEntity,
       value: v
     }))
 
     try {
       await this._store.save({ key, data })
     } catch (err) {
-      throw new Error(
-        `Error while saving initial user entity to GCP Datastore for ${user.username}`
-      )
+      throw new Error(`Error while saving initial user entity to GCP Datastore for ${user.username}`)
     }
   }
 
@@ -64,6 +62,7 @@ class StoreClient {
         path: ['User']
       })
       await this._store.save({ key: archiveKey, data: entity })
+      //@ts-ignore
       await this._store.delete(entity[this._store.KEY])
 
       return true
@@ -80,10 +79,7 @@ class StoreClient {
    * @returns {(Promise<UserStoreEntity> | never)}
    * @memberof StoreClient
    */
-  async find(filters: {
-    forumsId?: number
-    username?: string
-  }): Throwable<Promise<UserStoreEntity>> {
+  async find(filters: { forumsId?: number; username?: string }): Throwable<Promise<UserStoreEntity>> {
     let query: Query = this._store.createQuery('User')
     query.namespace = 'active'
     if (filters.forumsId) query = query.filter('forums_id', '=', filters.forumsId)

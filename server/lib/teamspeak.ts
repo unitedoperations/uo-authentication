@@ -1,4 +1,5 @@
-import * as Teamspeak from 'node-teamspeak'
+// @ts-ignore
+import Teamspeak from 'node-teamspeak'
 
 /**
  * Wrapper client for the node Teamspeak package

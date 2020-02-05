@@ -1,8 +1,8 @@
 import * as React from 'react'
 import { Card } from 'semantic-ui-react'
 import AuthenticationPanel from './AuthenticationPanel'
-import { AuthenticationProvider, AuthenticationAttempt } from '../server/server'
-import { emitter } from '../pages/index'
+import { AuthenticationProvider, AuthenticationAttempt } from '../../server/server'
+import { emitter } from '../../pages/index'
 
 export interface AuthenticationPanelListProps {
   socket: SocketIOClient.Socket
@@ -23,10 +23,7 @@ export interface AuthenticationPanelListState {
   methods: Record<AuthenticationProvider, AuthMethod>
 }
 
-class AuthenticationPanelList extends React.Component<
-  AuthenticationPanelListProps,
-  AuthenticationPanelListState
-> {
+class AuthenticationPanelList extends React.Component<AuthenticationPanelListProps, AuthenticationPanelListState> {
   state = {
     shouldSubscribe: false,
     subscribed: false,
@@ -55,10 +52,7 @@ class AuthenticationPanelList extends React.Component<
     }
   }
 
-  static getDerivedStateFromProps(
-    props: AuthenticationPanelListProps,
-    state: AuthenticationPanelListState
-  ) {
+  static getDerivedStateFromProps(props: AuthenticationPanelListProps, state: AuthenticationPanelListState) {
     if (props.socket && !state.shouldSubscribe) return { shouldSubscribe: true }
     return null
   }

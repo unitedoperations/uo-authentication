@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { credentials } from 'grpc'
-import * as OAuth2Strategy from 'passport-oauth2'
+import OAuth2Strategy from 'passport-oauth2'
 import fetch, { RequestInit } from 'node-fetch'
 import * as shortid from 'shortid'
 import storeClient from './lib/store'
@@ -75,10 +75,7 @@ const ForumsGroupMap: Record<string, { discord?: string; ts?: TeamspeakGroups }>
  * GRPC client for Discord bot interactions and role provisioning
  */
 // @ts-ignore
-const discordClient = new protoDescriptor.ProvisionService(
-  'localhost:50051',
-  credentials.createInsecure()
-)
+const discordClient = new protoDescriptor.ProvisionService('localhost:50051', credentials.createInsecure())
 
 /**
  * Creates the HTTP request options object for fetch calls
@@ -100,12 +97,15 @@ const requestOptions = (other: Partial<RequestInit> = {}): RequestInit => ({
  */
 async function getPlatformGroups(username: string): Promise<[number[], string[]]> {
   const user: Nullable<ForumsUser> = await getForumsUser(username)
-  const forumGroups: string[] = [user.primaryGroup.name, ...user.secondaryGroups.map(g => g.name)]
+  if (user) {
+    const forumGroups: string[] = [user.primaryGroup.name, ...user.secondaryGroups.map(g => g.name)]
 
-  return [
-    forumGroups.map(g => ForumsGroupMap[g].ts || null).filter(r => r),
-    forumGroups.map(g => ForumsGroupMap[g].discord || null).filter(r => r)
-  ]
+    return [
+      forumGroups.map(g => ForumsGroupMap[g].ts || null).filter(r => r) as number[],
+      forumGroups.map(g => ForumsGroupMap[g].discord || null).filter(r => r) as string[]
+    ]
+  }
+  return [[], []]
 }
 
 /**
@@ -142,10 +142,9 @@ async function getForumsUser(username: string): Promise<Nullable<ForumsUser>> {
  * @returns {Promise<TeamspeakUser | null>}
  */
 async function getTeamspeakUser(username: string): Promise<Nullable<TeamspeakUser>> {
-  const client: Nullable<{ clid: number; client_nickname: string }> = await tsClient.send(
-    'clientfind',
-    { pattern: username }
-  )
+  const client: Nullable<{ clid: number; client_nickname: string }> = await tsClient.send('clientfind', {
+    pattern: username
+  })
   if (!client) return null
 
   return tsClient.send('clientinfo', { clid: client.clid })
@@ -164,30 +163,30 @@ async function getTeamspeakUser(username: string): Promise<Nullable<TeamspeakUse
  */
 export async function verifyForums(req: Request, res: Response, _next: NextFunction) {
   try {
-    const { username } = req.session.passport.user
+    const { username } = req.session!.passport.user
     const forumsUser: Nullable<ForumsUser> = await getForumsUser(username)
 
     if (forumsUser) {
-      req.session.passport.user.forumsId = forumsUser.id
-      req.session.passport.user.forumsEmail = forumsUser.email
+      req.session!.passport.user.forumsId = forumsUser.id
+      req.session!.passport.user.forumsEmail = forumsUser.email
     }
 
-    const groupsAssignedOnForums: string[] = [
-      forumsUser.primaryGroup.name,
-      ...forumsUser.secondaryGroups.map(g => g.name)
-    ]
-    const willTransfer: string[] = Object.keys(ForumsGroupMap).filter(k =>
-      groupsAssignedOnForums.includes(k)
-    )
-    const wontTransfer: string[] = groupsAssignedOnForums.filter(g => !willTransfer.includes(g))
+    if (forumsUser) {
+      const groupsAssignedOnForums: string[] = [
+        forumsUser.primaryGroup.name,
+        ...forumsUser.secondaryGroups.map(g => g.name)
+      ]
+      const willTransfer: string[] = Object.keys(ForumsGroupMap).filter(k => groupsAssignedOnForums.includes(k))
+      const wontTransfer: string[] = groupsAssignedOnForums.filter(g => !willTransfer.includes(g))
 
-    io.sockets.connected[req.cookies.ioId].emit('group_transfers', {
-      will: willTransfer,
-      wont: wontTransfer
-    })
-    res.redirect(
-      `/api/oauth2/complete?ref=forums&status=${forumsUser !== null ? 'success' : 'failed'}`
-    )
+      io.sockets.connected[req.cookies.ioId].emit('group_transfers', {
+        will: willTransfer,
+        wont: wontTransfer
+      })
+      res.redirect(`/api/oauth2/complete?ref=forums&status=${forumsUser !== null ? 'success' : 'failed'}`)
+    } else {
+      throw new Error('Failed to find user in forums')
+    }
   } catch (err) {
     io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
     res.redirect('/api/oauth2/complete?ref=forums&status=error')
@@ -205,14 +204,16 @@ export async function verifyForums(req: Request, res: Response, _next: NextFunct
  */
 export async function verifyTeamspeak(req: Request, res: Response, _next: NextFunction) {
   try {
-    const { username } = req.session.passport.user
+    const { username } = req.session!.passport.user
     const client: Nullable<TeamspeakUser> = await getTeamspeakUser(username)
-    req.session.passport.user.teamspeakId = client.client_unique_identifier
-    req.session.passport.user.teamspeakDBId = client.client_database_id
-    req.session.passport.user.ip = client.connection_client_ip
-    res.redirect(
-      `/api/oauth2/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`
-    )
+    if (client) {
+      req.session!.passport.user.teamspeakId = client.client_unique_identifier
+      req.session!.passport.user.teamspeakDBId = client.client_database_id
+      req.session!.passport.user.ip = client.connection_client_ip
+      res.redirect(`/api/oauth2/complete?ref=teamspeak&status=${client !== null ? 'success' : 'failed'}`)
+    } else {
+      throw new Error('Failed to get user from Teamspeak')
+    }
   } catch (err) {
     io.sockets.connected[req.cookies.ioId].emit('auth_error', err.message)
     res.redirect('/api/oauth2/complete?ref=teamspeak&status=error')
@@ -228,12 +229,7 @@ export async function verifyTeamspeak(req: Request, res: Response, _next: NextFu
  * @param {unknown} _profile
  * @param {Function} done
  */
-export async function verifyDiscord(
-  accessToken: string,
-  _refreshToken: string,
-  _profile: any,
-  done: Function
-) {
+export async function verifyDiscord(accessToken: string, _refreshToken: string, _profile: any, done: Function) {
   try {
     const res = await fetch(
       'https://discordapp.com/api/users/@me',
@@ -270,7 +266,7 @@ export async function completeAuthProvider(req: Request, res: Response, _next: N
   io.sockets.connected[req.cookies.ioId].emit('auth_attempt', socketData)
 
   if (status === 'success' && ref === 'teamspeak') {
-    io.sockets.connected[req.cookies.ioId].emit('auth_complete', req.session.passport.user.username)
+    io.sockets.connected[req.cookies.ioId].emit('auth_complete', req.session!.passport.user.username)
   }
 
   nextHandler(req, res)
@@ -334,17 +330,12 @@ export async function getUserInfo(req: Request, res: Response, _next: NextFuncti
 export async function getTeamspeakUserGroups(req: Request, res: Response, _next: NextFunction) {
   try {
     const { id } = req.query
-    let groups: TeamspeakServerGroup | TeamspeakServerGroup[] = await tsClient.send(
-      'servergroupsbyclientid',
-      {
-        cldbid: id
-      }
-    )
+    let groups: TeamspeakServerGroup | TeamspeakServerGroup[] = await tsClient.send('servergroupsbyclientid', {
+      cldbid: id
+    })
     if (!(groups instanceof Array)) groups = [groups]
 
-    res
-      .status(200)
-      .json({ groups: groups.map(g => ({ sgid: g.sgid, name: g.name.replace(/\*\s+/g, '') })) })
+    res.status(200).json({ groups: groups.map(g => ({ sgid: g.sgid, name: g.name.replace(/\*\s+/g, '') })) })
   } catch (err) {
     res.status(404).json({ groups: null, error: err.message })
   }
@@ -361,13 +352,13 @@ export async function getTeamspeakUserGroups(req: Request, res: Response, _next:
 export async function addAuthenticatedUser(req: Request, res: Response, _next: NextFunction) {
   try {
     const entity: UserStoreEntity = {
-      username: req.session.passport.user.username,
-      email: req.session.passport.user.forumsEmail,
-      forums_id: req.session.passport.user.forumsId,
-      discord_id: req.session.passport.user.id,
-      teamspeak_id: req.session.passport.user.teamspeakId,
-      teamspeak_db_id: req.session.passport.user.teamspeakDBId,
-      ip: req.session.passport.user.ip,
+      username: req.session!.passport.user.username,
+      email: req.session!.passport.user.forumsEmail,
+      forums_id: req.session!.passport.user.forumsId,
+      discord_id: req.session!.passport.user.id,
+      teamspeak_id: req.session!.passport.user.teamspeakId,
+      teamspeak_db_id: req.session!.passport.user.teamspeakDBId,
+      ip: req.session!.passport.user.ip,
       createdAt: new Date().toISOString()
     }
 
@@ -387,12 +378,9 @@ export async function addAuthenticatedUser(req: Request, res: Response, _next: N
       const [tsGroups, disRoles] = await getPlatformGroups(entity.username)
       console.log(disRoles)
       await tsClient.assign(tsGroups, entity.teamspeak_db_id)
-      discordClient.provision(
-        { id: entity.discord_id, assign: disRoles, revoke: [] },
-        (err: Error, res: any) => {
-          if (err || !res.success) throw new Error(JSON.stringify(err))
-        }
-      )
+      discordClient.provision({ id: entity.discord_id, assign: disRoles, revoke: [] }, (err: Error, res: any) => {
+        if (err || !res.success) throw new Error(JSON.stringify(err))
+      })
     }
 
     res.status(200).json({ hadPrevious, user: entity })

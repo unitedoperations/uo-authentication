@@ -1,15 +1,13 @@
 import * as React from 'react'
-import * as EventEmitter from 'events'
+import * as events from 'events'
 import { Container, Header, Icon, Message, Label } from 'semantic-ui-react'
 import Page from '../components/Page'
 import Charter from '../components/Charter'
-import AuthenticationPanelList from '../components/AuthenticationPanelList'
+import AuthenticationPanelList from '../components/Authentication/AuthenticationPanelList'
 import CompletionModal from '../components/CompletionModal'
 import CookiePolicy from '../components/CookiePolicy'
-import 'semantic-ui-css/semantic.min.css'
-import '../static/styles.css'
 
-export const emitter = new EventEmitter()
+export const emitter = new events.EventEmitter()
 
 export interface IndexPageProps {
   socket: SocketIOClient.Socket
@@ -71,29 +69,25 @@ class Home extends React.Component<IndexPageProps, IndexPageState> {
                 <Icon name="warning" />
                 <Message.Content>
                   <Message.Header>Note</Message.Header>
-                  It is required for successful authentication on all three platforms that you have
-                  a consistent username among them. Before proceeding, make sure that your username
-                  is <em>the same</em> on the forums, Discord server and the Teamspeak server!
+                  It is required for successful authentication on all three platforms that you have a consistent
+                  username among them. Before proceeding, make sure that your username is <em>the same</em> on the
+                  forums, Discord server and the Teamspeak server!
                   <br />
                   <br />
-                  Prior to executing the Teamspeak authentication provider, be sure that you are
-                  currently logged into the United Operations Teamspeak server!
+                  Prior to executing the Teamspeak authentication provider, be sure that you are currently logged into
+                  the United Operations Teamspeak server!
                 </Message.Content>
               </Message>
-              <AuthenticationPanelList
-                enabled={this.state.charterComplete}
-                socket={this.props.socket}
-              />
+              <AuthenticationPanelList enabled={this.state.charterComplete} socket={this.props.socket} />
               {this.state.showGroups && (
                 <Message icon>
                   <Icon name="id card" />
                   <Message.Content>
                     <Message.Header>Platform Groups</Message.Header>
-                    The following green groups <em>will</em> be assigned on their respective
-                    platforms, and the red groups <em>will not</em> be automatically reassigned on
-                    the supported platforms due to risk and security purposes. Please contact an
-                    officer to be manually reassigned to the groups indicated by the red labels on
-                    each supporting platform.
+                    The following green groups <em>will</em> be assigned on their respective platforms, and the red
+                    groups <em>will not</em> be automatically reassigned on the supported platforms due to risk and
+                    security purposes. Please contact an officer to be manually reassigned to the groups indicated by
+                    the red labels on each supporting platform.
                     <br />
                     <br />
                     <Label.Group color="green">

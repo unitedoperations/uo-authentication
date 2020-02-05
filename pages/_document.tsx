@@ -10,12 +10,9 @@ class SpireDocument extends Document {
           <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
           <meta name="theme-color" content="#b19e71" />
           <meta httpEquiv="X-UA-Compatible" content="ie=edge" />
-          <meta
-            name="description"
-            content="United Operations gaming community user authentcation system"
-          />
-          <link rel="manifest" href="/static/manifest.json" />
-          <link rel="shortcut icon" href="/static/favicon.ico" />
+          <meta name="description" content="United Operations gaming community user authentcation system" />
+          <link rel="manifest" href="/public/manifest.json" />
+          <link rel="shortcut icon" href="/public/favicon.ico" />
         </Head>
         <body>
           <Main />
