@@ -22,7 +22,7 @@
     "grpc": "^1.24.2",
     "helmet": "^3.21.2",
     "morgan": "^1.9.1",
-    "next": "^9.2.1",
+    "next": "^9.5.3",
     "node-fetch": "^2.6.0",
     "node-teamspeak": "^1.0.10",
     "nodemailer": "^6.4.2",
